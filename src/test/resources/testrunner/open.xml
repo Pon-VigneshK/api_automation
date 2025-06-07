@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd">
+<suite name="OPEN" data-provider-thread-count="3">
+    <listeners>
+        <listener class-name="org.op_ra.listeners.ListenerClass"></listener>
+        <listener class-name="org.op_ra.listeners.MethodInterceptor"></listener>
+        <listener class-name="org.op_ra.listeners.AnnotationTransformer"></listener>
+    </listeners>
+    <test name="OPEN_Service_Automation" thread-count="1">
+
+        <classes>
+            <class name="org.op_ra.tests.OpenService.TestOpenERX"></class>
+            <class name="org.op_ra.tests.OpenService.TestOpenOrphanDiagTest"></class>
+            <class name="org.op_ra.tests.OpenService.TestOpenAccessOrders"></class>
+        </classes>
+    </test>
+</suite>
