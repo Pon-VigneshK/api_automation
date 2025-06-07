@@ -1,113 +1,78 @@
 package org.op_ra.enums;
 
+/**
+ * Enumeration of configuration property keys used in the framework.
+ * These keys correspond to entries in the {@code config.properties} file.
+ * Using an enum provides type safety and autocompletion when accessing configuration values
+ * via {@link org.op_ra.utils.PropertyUtils#getValue(ConfigProperties)}.
+ */
 public enum ConfigProperties {
+    // General Configuration
+    ENV,                        // Current execution environment (e.g., DEV, QA, PROD)
+    RUNMANAGER,                 // Manages which set of tests to run (e.g., Smoke, Regression)
+    SERVICE_NAME,             // Name of the service under test, used in reporting
 
-    /**
-     * Enums to restrict the values used on Property files. Without using enums there can be created null pointer exceptions
-     * because of typos.
-     * Whenever a new value is added to property file, corresponding enum should be created here.
-     */
-    // Framework Configuration Properties
-    ENV,
-    RUN_MODE,
-    OVERRIDE_REPORTS,
-    RETRY,
-    LOG_RESPONSE,
-
-    // Authentication Properties
-    AUTH_TYPE,
-    ACCESS_TOKEN_URL,
-    CLIENT_ID,
-    CLIENT_SECRET,
-    SCOPE,
-    AUDIENCE,
-    AUTH_PREFIX,
-    API_KEY,
-
-
-    // Service Base URLs
+    // Base URLs for different services or environments
+    BASE_URL,                   // A generic base URL, might be overridden by specific service URLs
     OPEN_ACTOR_BASE_URL,
     OPEN_CHART_BASE_URL,
     OPEN_CHC_BASE_URL,
-    OPEN_CODING_BASE_URL,
     OPEN_DOCUMENT_BASE_URL,
     OPEN_ERX_BASE_URL,
     OPEN_LAB_BASE_URL,
-    OPEN_JOBS_BASE_URL,
+    OPEN_JOB_BASE_URL,
+    OPEN_CODING_BASE_URL,       // Assuming a coding service might exist
 
-
-    // Service-specific Basic Authentication - Actor
+    // Usernames for different services (consider more secure ways to handle credentials in production)
     OPEN_ACTOR_USERNAME,
-    OPEN_ACTOR_PASSWORD,
-
-    // Service-specific Basic Authentication - Chart
     OPEN_CHART_USERNAME,
-    OPEN_CHART_PASSWORD,
-
-    // Service-specific Basic Authentication - CHC
     OPEN_CHC_USERNAME,
-    OPEN_CHC_PASSWORD,
-
-    // Service-specific Basic Authentication - Coding
+    OPEN_DOCUMENT_USERNAME,
+    OPEN_ERX_USERNAME,
+    OPEN_LAB_USERNAME,
+    OPEN_JOB_USERNAME,
     OPEN_CODING_USERNAME,
+
+    // Passwords for different services (highly recommend using a secure vault for production)
+    OPEN_ACTOR_PASSWORD,
+    OPEN_CHART_PASSWORD,
+    OPEN_CHC_PASSWORD,
+    OPEN_DOCUMENT_PASSWORD,
+    OPEN_ERX_PASSWORD,
+    OPEN_LAB_PASSWORD,
+    OPEN_JOB_PASSWORD,
     OPEN_CODING_PASSWORD,
 
-    // Service-specific Basic Authentication - Document
-    OPEN_DOCUMENT_USERNAME,
-    OPEN_DOCUMENT_PASSWORD,
+    // Reporting Configuration
+    OVERRIDEREPORTS,            // Whether to override existing reports (e.g., "yes" or "no")
+    PASSEDSTEPSSCREENSHOT,      // Whether to take screenshots for passed steps
+    FAILEDSTEPSSCREENSHOT,      // Whether to take screenshots for failed steps
+    SKIPPEDSTEPSSCREENSHOT,     // Whether to take screenshots for skipped steps
+    LOG_RESPONSE,               // Whether to log API responses in the report ("yes" or "no")
 
-    // Service-specific Basic Authentication - ERX
-    OPEN_ERX_USERNAME,
-    OPEN_ERX_PASSWORD,
+    // Database Configuration (for test data or logging results)
+    DB_URL,                     // JDBC URL for the database
+    DB_USERNAME,                // Database username
+    DB_PASSWORD,                // Database password
 
-    // Service-specific Basic Authentication - Lab
-    OPEN_LAB_USERNAME,
-    OPEN_LAB_PASSWORD,
+    // Email Configuration (for sending test results)
+    SEND_EMAIL,                 // Whether to send email notifications ("yes" or "no")
+    EMAIL_HOST,                 // SMTP host for sending emails
+    EMAIL_PORT,                 // SMTP port
+    EMAIL_USERNAME,             // Email account username
+    EMAIL_PASSWORD,             // Email account password
+    EMAIL_FROM,                 // From email address
+    EMAIL_TO_RECIPIENTS,        // Comma-separated list of To recipients
+    EMAIL_CC_RECIPIENTS,        // Comma-separated list of CC recipients
+    EMAIL_SUBJECT,              // Subject line for the email report
 
-    // Service-specific Basic Authentication - Job
-    OPEN_JOB_USERNAME,
-    OPEN_JOB_PASSWORD,
+    // Other configurations
+    EXPLICIT_WAIT_TIMEOUT,      // Default timeout for explicit waits (e.g., in seconds)
+    RETRY_FAILED_TESTS;         // Whether to retry failed tests ("yes" or "no")
 
-
-
-    // Service-specific Headers - Actor
-    OPEN_ACTOR_ACCEPT_HEADER,
-    OPEN_ACTOR_CONTENT_TYPE_HEADER,
-    OPEN_ACTOR_ORGANIZATION_ID_HEADER,
-
-    // Service-specific Headers - Chart
-    OPEN_CHART_ACCEPT_HEADER,
-    OPEN_CHART_CONTENT_TYPE_HEADER,
-    OPEN_CHART_ORGANIZATION_ID_HEADER,
-
-    // Service-specific Headers - CHC
-    OPEN_CHC_ACCEPT_HEADER,
-    OPEN_CHC_CONTENT_TYPE_HEADER,
-    OPEN_CHC_ORGANIZATION_ID_HEADER,
-
-    // Service-specific Headers - Coding
-    OPEN_CODING_ACCEPT_HEADER,
-    OPEN_CODING_CONTENT_TYPE_HEADER,
-    OPEN_CODING_ORGANIZATION_ID_HEADER,
-
-    // Service-specific Headers - Document
-    OPEN_DOCUMENT_ACCEPT_HEADER,
-    OPEN_DOCUMENT_CONTENT_TYPE_HEADER,
-    OPEN_DOCUMENT_ORGANIZATION_ID_HEADER,
-
-    // Service-specific Headers - ERX
-    OPEN_ERX_ACCEPT_HEADER,
-    OPEN_ERX_CONTENT_TYPE_HEADER,
-    OPEN_ERX_ORGANIZATION_ID_HEADER,
-
-    // Service-specific Headers - Lab
-    OPEN_LAB_ACCEPT_HEADER,
-    OPEN_LAB_CONTENT_TYPE_HEADER,
-    OPEN_LAB_ORGANIZATION_ID_HEADER,
-
-    // Service-specific Headers - Job
-    OPEN_JOB_ACCEPT_HEADER,
-    OPEN_JOB_CONTENT_TYPE_HEADER,
-    OPEN_JOB_ORGANIZATION_ID_HEADER,
-
+    // Note: Ensure all keys used in config.properties are listed here.
+    // The actual values are fetched using PropertyUtils.getValue(ConfigProperties.KEY_NAME)
+    // where KEY_NAME is one of the enum constants above.
+    // The property names in the .properties file should match the lowercase version of these enum constants.
+    // e.g., ENV enum corresponds to "env" key in config.properties.
 }

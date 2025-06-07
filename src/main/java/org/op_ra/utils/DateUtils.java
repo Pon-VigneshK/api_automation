@@ -1,45 +1,60 @@
 package org.op_ra.utils;
 
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Date;
 
+/**
+ * Utility class for date and time related operations.
+ * Provides methods to get the current date and time in specific formats.
+ */
 public final class DateUtils {
-    public static String convertDate(String inputDate) {
-        SimpleDateFormat inputFormat = new SimpleDateFormat("M/dd/yyyy HH:mm");
-        SimpleDateFormat outputFormat = new SimpleDateFormat("yyyy-MM-dd");
-        String formattedDate = null;
-        try {
-            Date date = inputFormat.parse(inputDate);
-            formattedDate = outputFormat.format(date);
 
-        } catch (ParseException e) {
-            throw new RuntimeException(e);
-        }
-        return formattedDate;
+    /**
+     * Private constructor to prevent instantiation of this utility class.
+     */
+    private DateUtils() {
+        // Private constructor
     }
 
-    public static String convertDate(String inputDate, String format) {
-        SimpleDateFormat inputFormat = new SimpleDateFormat(format);
-        SimpleDateFormat outputFormat = new SimpleDateFormat("yyyy-MM-dd");
-        String formattedDate = null;
-        try {
-            Date date = inputFormat.parse(inputDate);
-            formattedDate = outputFormat.format(date);
-
-        } catch (ParseException e) {
-            throw new RuntimeException(e);
-        }
-        return formattedDate;
+    /**
+     * Gets the current date and time formatted as "yyyy-MM-dd HH:mm:ss".
+     *
+     * @return A string representing the current date and time.
+     */
+    public static String getCurrentDateTime() {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        return sdf.format(new Date());
     }
 
-    public static String formatDate(String input) {
-        DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-        LocalDateTime dateTime = LocalDateTime.parse(input, inputFormatter);
-        DateTimeFormatter outputFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
-        return dateTime.format(outputFormatter);
+    /**
+     * Gets the current date formatted as "yyyy-MM-dd".
+     *
+     * @return A string representing the current date.
+     */
+    public static String getCurrentDate() {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        return sdf.format(new Date());
+    }
 
+    /**
+     * Gets the current date and time formatted according to the specified pattern.
+     *
+     * @param formatPattern The pattern to format the date and time (e.g., "dd/MM/yyyy HH:mm:ss a").
+     *                      See {@link java.text.SimpleDateFormat} for pattern syntax.
+     * @return A string representing the current date and time in the given format.
+     *         Returns null if the formatPattern is null or invalid (though SimpleDateFormat might throw an exception).
+     */
+    public static String getCurrentDateTime(String formatPattern) {
+        if (formatPattern == null) {
+            return null; // Or throw IllegalArgumentException
+        }
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat(formatPattern);
+            return sdf.format(new Date());
+        } catch (IllegalArgumentException e) {
+            // Log error or re-throw
+            System.err.println("Invalid date format pattern: " + formatPattern + " - " + e.getMessage());
+            return null; // Or throw
+        }
     }
 }

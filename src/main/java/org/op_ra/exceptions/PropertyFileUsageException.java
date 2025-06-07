@@ -1,32 +1,28 @@
 package org.op_ra.exceptions;
 
-import org.op_ra.constants.FrameworkConstants;
-import org.op_ra.utils.PropertyUtils;
-
 /**
- * A runtime exception occurs when the key or value fetched from the property file is null.
- *
- * @see FrameworkConstants
- * @see PropertyUtils
+ * Custom exception related to errors encountered while using property files.
+ * This can include issues like the property file not being found, a required property key missing,
+ * or errors during loading of properties.
  */
-@SuppressWarnings("serial")
 public class PropertyFileUsageException extends FrameworkException {
 
     /**
-     * Pass the message that needs to be appended to the stacktrace
+     * Constructs a new PropertyFileUsageException with the specified detail message.
      *
-     * @param message Details about the exception or custom message
+     * @param message the detail message.
      */
     public PropertyFileUsageException(String message) {
         super(message);
     }
 
     /**
-     * @param message Details about the exception or custom message
-     * @param cause   Pass the enriched stacktrace or customised stacktrace
+     * Constructs a new PropertyFileUsageException with the specified detail message and cause.
+     *
+     * @param message the detail message.
+     * @param cause   the cause of the exception (e.g., an underlying IOException).
      */
     public PropertyFileUsageException(String message, Throwable cause) {
         super(message, cause);
     }
-
 }

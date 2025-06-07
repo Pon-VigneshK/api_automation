@@ -1,115 +1,138 @@
 package org.op_ra.utils;
 
-import org.op_ra.constants.FrameworkConstants;
+import org.apache.commons.mail.DefaultAuthenticator;
+import org.apache.commons.mail.EmailAttachment;
+import org.apache.commons.mail.HtmlEmail; // Using HtmlEmail for better formatting and attachments
+import org.op_ra.constants.FrameworkConstants; // For report path
+import java.io.File; // Import for File class
 
-import javax.activation.DataHandler;
-import javax.activation.DataSource;
-import javax.activation.FileDataSource;
-import javax.mail.*;
-import javax.mail.internet.InternetAddress;
-import javax.mail.internet.MimeBodyPart;
-import javax.mail.internet.MimeMessage;
-import javax.mail.internet.MimeMultipart;
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
-import java.util.Properties;
+/**
+ * Utility class for sending email notifications with test execution results.
+ * This class uses Apache Commons Email library to construct and send emails.
+ * Email server configuration and recipient details are fetched using {@link EmailConfig}.
+ * <p>
+ * The primary method {@link #sendEmail()} is typically called at the end of a test suite execution,
+ * often from a TestNG listener (e.g., {@code ISuiteListener#onFinish}).
+ * </p>
+ * It attaches the main ExtentReport HTML file to the email.
+ */
+public final class SendEmailWithResults {
 
-
-public class SendEmailWithResults {
-
-    public static void sendEmail() {
-        EmailConfig emailConfig = new EmailConfig();
-
-        if (emailConfig.getSendExecutionResultsInEmail().equalsIgnoreCase("yes")) {
-            String attachmentPath = FrameworkConstants.getReportPath();
-            String greeting;
-            LocalTime currentTime = LocalTime.now();
-            LocalDate currentDate = LocalDate.now();
-            LocalTime morningEnd = LocalTime.of(12, 0);
-            DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-            String formattedDate = currentDate.format(dateFormatter);
-            DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("hh:mm a");
-            String formattedTime = currentTime.format(timeFormatter);
-
-            if (currentTime.isBefore(morningEnd)) {
-                greeting = "Good Morning";
-            } else {
-                greeting = "Good Afternoon";
-            }
-
-            String subject = "OPEN Service Automation Report for " + formattedDate + " Execution";
-            String body = "Hi Team,\n\n" +
-                    greeting + ",\n\n" +
-                    "Please find the OPEN service automation execution report for " + formattedTime + ". Kindly review it.\n\n" +
-                    "Thank you,";
-            String from = emailConfig.getFromEmail();
-            String host = "smtp.gmail.com";
-            String password = emailConfig.getEmailPassword();
-            String to =  emailConfig.getToEmails();
-            String cc = emailConfig.getCcEmails();
-            String bcc = emailConfig.getBccEmails();
-
-            Properties properties = System.getProperties();
-            properties.put("mail.smtp.host", host);
-            properties.put("mail.smtp.port", "587");
-            properties.put("mail.smtp.auth", "true");
-            properties.put("mail.smtp.starttls.enable", "true");
-
-            Session session = Session.getInstance(properties, new javax.mail.Authenticator() {
-                protected PasswordAuthentication getPasswordAuthentication() {
-                    return new PasswordAuthentication(from, password);
-                }
-            });
-
-            try {
-                MimeMessage message = new MimeMessage(session);
-                message.setFrom(new InternetAddress(from));
-
-                if (to != null && !to.isEmpty()) {
-                    String[] toEmails = to.split(",");
-                    for (String toEmail : toEmails) {
-                        message.addRecipient(Message.RecipientType.TO, new InternetAddress(toEmail.trim()));
-                    }
-                }
-
-                if (cc != null && !cc.isEmpty()) {
-                    String[] ccEmails = cc.split(",");
-                    for (String ccEmail : ccEmails) {
-                        message.addRecipient(Message.RecipientType.CC, new InternetAddress(ccEmail.trim()));
-                    }
-                }
-                if (bcc != null && !bcc.isEmpty()) {
-                    String[] bccEmails = bcc.split(",");
-                    for (String bccEmail : bccEmails) {
-                        message.addRecipient(Message.RecipientType.BCC, new InternetAddress(bccEmail.trim()));
-                    }
-                }
-                message.setSubject(subject);
-
-                MimeBodyPart messageBodyPart = new MimeBodyPart();
-                messageBodyPart.setText(body);
-
-                Multipart multipart = new MimeMultipart();
-                multipart.addBodyPart(messageBodyPart);
-
-                // Attach the report file
-                messageBodyPart = new MimeBodyPart();
-                DataSource source = new FileDataSource(attachmentPath);
-                messageBodyPart.setDataHandler(new DataHandler(source));
-                messageBodyPart.setFileName("OPEN_Service_" + formattedDate + "_" + formattedTime + ".html");
-                multipart.addBodyPart(messageBodyPart);
-
-                message.setContent(multipart);
-
-                Transport.send(message);
-                System.out.println("Email Sent Successfully.");
-            } catch (MessagingException mex) {
-                mex.printStackTrace();
-            }
-        }
-
+    /**
+     * Private constructor to prevent instantiation of this utility class.
+     */
+    private SendEmailWithResults() {
+        // Private constructor
     }
 
+    /**
+     * Sends an email with the test execution report attached.
+     * Email configuration (server, credentials, recipients, subject) is retrieved from {@link EmailConfig}.
+     * The ExtentReport HTML file path is retrieved from {@link FrameworkConstants#getReportPath()}.
+     * <p>
+     * If email sending is disabled via {@link EmailConfig#isEmailSendingEnabled()}, this method does nothing.
+     * </p>
+     *
+     * @throws RuntimeException if an error occurs during email construction or sending.
+     *                          The underlying {@link org.apache.commons.mail.EmailException} is wrapped.
+     */
+    public static void sendEmail() {
+        if (!EmailConfig.isEmailSendingEnabled()) {
+            System.out.println("SendEmailWithResults: Email sending is disabled in configuration.");
+            // FrameworkLogger.log(LogType.INFO, "Email sending is disabled.");
+            return;
+        }
 
+        try {
+            HtmlEmail email = new HtmlEmail(); // Use HtmlEmail for attachments and HTML content
+
+            // Set SMTP server details
+            email.setHostName(EmailConfig.getEmailHost());
+            String portStr = EmailConfig.getEmailPort();
+            if (portStr != null && !portStr.trim().isEmpty()) {
+                 try {
+                    email.setSmtpPort(Integer.parseInt(portStr));
+                 } catch (NumberFormatException e) {
+                     System.err.println("SendEmailWithResults: Invalid email port format: " + portStr + ". Using default port.");
+                     // Log this error. Depending on the mail server, default might work or fail.
+                 }
+            }
+
+            // Set authentication if username/password are provided
+            String username = EmailConfig.getEmailUsername();
+            String password = EmailConfig.getEmailPassword();
+            if (username != null && !username.trim().isEmpty() && password != null && !password.trim().isEmpty()) {
+                email.setAuthenticator(new DefaultAuthenticator(username, password));
+                email.setSSLOnConnect(true); // Common for modern SMTP; make this configurable if needed (e.g. setStartTLSEnabled)
+            }
+
+            // Set sender and recipients
+            email.setFrom(EmailConfig.getFromEmailAddress());
+            String toRecipients = EmailConfig.getToRecipients();
+            if (toRecipients != null && !toRecipients.trim().isEmpty()) {
+                for (String to : toRecipients.split(",")) {
+                    email.addTo(to.trim());
+                }
+            } else {
+                 System.err.println("SendEmailWithResults: No '''To''' recipients configured. Email will not be sent.");
+                 return; // Or throw an error
+            }
+
+            String ccRecipients = EmailConfig.getCcRecipients();
+            if (ccRecipients != null && !ccRecipients.trim().isEmpty()) {
+                for (String cc : ccRecipients.split(",")) {
+                    email.addCc(cc.trim());
+                }
+            }
+
+            // Set email subject and body
+            email.setSubject(EmailConfig.getEmailSubject() + " - " + DateUtils.getCurrentDateTime()); // Add timestamp to subject
+
+            // Construct HTML body
+            // You can make this more sophisticated with actual test summary data if available
+            String htmlBody = "<html><body>"
+                          + "<p>Hello Team,</p>"
+                          + "<p>Please find attached the API test execution report for <b>"
+                          + FrameworkConstants.getServiceName() // Assuming service name is available
+                          + "</b> (Suite: " + FrameworkConstants.getReportClassName() + ")."
+                          + "</p>"
+                          + "<p>Execution completed on: " + DateUtils.getCurrentDateTime() + "</p>"
+                          + "<p>Regards,<br>Automation Team</p>"
+                          + "</body></html>";
+            email.setHtmlMsg(htmlBody);
+            // Set a plain text alternative for email clients that don'''t support HTML
+            email.setTextMsg("Hello Team, Please find the attached API test execution report. Regards, Automation Team.");
+
+
+            // Attach the ExtentReport
+            String reportPath = FrameworkConstants.getReportPath();
+            if (reportPath != null && !reportPath.isEmpty()) {
+                File reportFile = new File(reportPath);
+                if (reportFile.exists()) {
+                    EmailAttachment attachment = new EmailAttachment();
+                    attachment.setPath(reportPath);
+                    attachment.setDisposition(EmailAttachment.ATTACHMENT);
+                    attachment.setDescription("Test Execution Report");
+                    attachment.setName(reportFile.getName()); // Set a user-friendly name for the attachment
+                    email.attach(attachment);
+                } else {
+                    System.err.println("SendEmailWithResults: Report file not found at: " + reportPath + ". Email will be sent without attachment.");
+                    // FrameworkLogger.log(LogType.WARN, "Report file not found for email attachment: " + reportPath);
+                }
+            } else {
+                 System.err.println("SendEmailWithResults: Report path is empty. Email will be sent without attachment.");
+            }
+
+            // Send the email
+            email.send();
+            System.out.println("SendEmailWithResults: Email sent successfully!");
+            // FrameworkLogger.log(LogType.INFO, "Test execution report email sent successfully.");
+
+        } catch (org.apache.commons.mail.EmailException e) {
+            System.err.println("SendEmailWithResults: Failed to send email. Error: " + e.getMessage());
+            // FrameworkLogger.log(LogType.ERROR, "Failed to send email: " + e.getMessage());
+            // e.printStackTrace(); // For debugging, consider logging stack trace
+            throw new RuntimeException("Failed to send email with test results.", e);
+        }
+    }
 }

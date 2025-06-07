@@ -1,52 +1,109 @@
 package org.op_ra.utils;
 
-import java.security.SecureRandom;
+import com.github.javafaker.Faker;
 
 /**
- * Utility class for generating random strings.
+ * Utility class for generating random test data using the JavaFaker library.
+ * Provides methods to get various types of fake data such as names, numbers, and more.
+ * This helps in creating dynamic and realistic test data.
  */
 public final class RandomUtils {
 
-    // SecureRandom instance for generating random numbers
-    private static final SecureRandom random = new SecureRandom();
+    // Static instance of Faker to be reused.
+    private static final Faker faker = new Faker();
 
-    // String containing all numeric characters
-    private static final String NUMERIC_STRING = "0123456789";
-
-    // String containing all uppercase alphabet characters
-    private static final String ALPHABET_STRING = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-
-    // Private constructor to prevent instantiation
+    /**
+     * Private constructor to prevent instantiation of this utility class.
+     */
     private RandomUtils() {
+        // Private constructor
     }
 
     /**
-     * Generates a random numeric string of the specified length.
+     * Generates a random integer within a specified range (inclusive).
      *
-     * @param length The length of the generated numeric string.
-     * @return A random numeric string.
+     * @param min The minimum value (inclusive).
+     * @param max The maximum value (inclusive).
+     * @return A random integer between min and max.
      */
-    public static String generateRandomNumericString(int length) {
-        StringBuilder sb = new StringBuilder(length);
-        for (int i = 0; i < length; i++) {
-            // Append a random numeric character to the StringBuilder
-            sb.append(NUMERIC_STRING.charAt(random.nextInt(NUMERIC_STRING.length())));
-        }
-        return sb.toString();
+    public static int getRandomNumber(int min, int max) {
+        return faker.number().numberBetween(min, max);
     }
 
     /**
-     * Generates a random string of the specified length using uppercase alphabet characters.
+     * Generates a random first name.
      *
-     * @param length The length of the generated string.
-     * @return A random string.
+     * @return A string representing a random first name.
      */
-    public static String generateRandomString(int length) {
-        StringBuilder sb = new StringBuilder(length);
-        for (int i = 0; i < length; i++) {
-            // Append a random alphabet character to the StringBuilder
-            sb.append(ALPHABET_STRING.charAt(random.nextInt(ALPHABET_STRING.length())));
-        }
-        return sb.toString();
+    public static String getFirstName() {
+        return faker.name().firstName();
     }
+
+    /**
+     * Generates a random last name.
+     *
+     * @return A string representing a random last name.
+     */
+    public static String getLastName() {
+        return faker.name().lastName();
+    }
+
+    /**
+     * Generates a random full name.
+     *
+     * @return A string representing a random full name.
+     */
+    public static String getFullName() {
+        return faker.name().fullName();
+    }
+
+    /**
+     * Generates a random email address.
+     *
+     * @return A string representing a random email address.
+     */
+    public static String getEmailAddress() {
+        return faker.internet().emailAddress();
+    }
+
+    /**
+     * Generates a random street address.
+     *
+     * @return A string representing a random street address.
+     */
+    public static String getStreetAddress() {
+        return faker.address().streetAddress();
+    }
+
+    /**
+     * Generates a random city name.
+     *
+     * @return A string representing a random city name.
+     */
+    public static String getCityName() {
+        return faker.address().cityName();
+    }
+
+    /**
+     * Generates a random country name.
+     *
+     * @return A string representing a random country name.
+     */
+    public static String getCountryName() {
+        return faker.address().country();
+    }
+
+    /**
+     * Generates a random job title.
+     *
+     * @return A string representing a random job title.
+     */
+    public static String getJobTitle() {
+        return faker.job().title();
+    }
+
+    // Add more methods as needed for other types of fake data, e.g.:
+    // faker.phoneNumber().cellPhone();
+    // faker.lorem().sentence();
+    // faker.date().birthday();
 }

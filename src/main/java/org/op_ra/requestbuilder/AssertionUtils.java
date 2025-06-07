@@ -1,225 +1,142 @@
 package org.op_ra.requestbuilder;
+
 import io.restassured.response.Response;
-import org.op_ra.enums.LogType;
-import org.op_ra.reports.ExtentLogger;
-import org.w3c.dom.*;
-import org.xml.sax.InputSource;
+import org.testng.Assert; // Using TestNG Assertions
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import java.io.StringReader;
+/**
+ * Utility class for common API response assertions.
+ * This class provides static methods to perform various checks on the {@link Response} object,
+ * such as verifying status codes, headers, and body content.
+ * <p>
+ * Using this class helps in creating more readable and maintainable assertion logic in test scripts.
+ * It standardizes common assertions and can also integrate with {@link org.op_ra.reports.ExtentLogger}
+ * to log assertion details.
+ * </p>
+ * Example usage:
+ * <pre>{@code
+ * Response response = // ... API call ...
+ * AssertionUtils.assertStatusCode(response, 200);
+ * AssertionUtils.assertContentType(response, "application/json");
+ * AssertionUtils.assertResponseBodyContains(response, "expectedValue");
+ * }</pre>
+ */
+public final class AssertionUtils {
 
-import static org.op_ra.reports.FrameworkLogger.log;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
-import static org.hamcrest.Matchers.lessThan;
-import static org.op_ra.constants.FrameworkConstants.getMaxLimit;
-
-public class AssertionUtils {
-
-
-    public static boolean findValues(String targetKey, String expectedValue, String jsonStr) {
-        log(LogType.INFO, String.format("Searching for key: '%s' with expected value: '%s'", targetKey, expectedValue));
-        try {
-            ObjectMapper mapper = new ObjectMapper();
-            Map<String, Object> jsonMap = mapper.readValue(jsonStr, new TypeReference<Map<String, Object>>() {});
-            List<String> results = new ArrayList<>();
-            extractMatchingValues(jsonMap, targetKey, results);
-            ExtentLogger.pass(String.format("Found values for key '%s': '%s'", targetKey, results));
-            log(LogType.DEBUG, String.format("Found values for key '%s': '%s'", targetKey, results));
-            return results.contains(expectedValue);
-        } catch (Exception e) {
-            ExtentLogger.fail(String.format("Failed to parse JSON or search key '%s': '%s'", targetKey, e.getMessage()));
-            log(LogType.ERROR, String.format("Failed to parse JSON or search key '%s': '%s'", targetKey, e.getMessage()));
-            e.printStackTrace();
-            return false;
-        }
+    /**
+     * Private constructor to prevent instantiation of this utility class.
+     */
+    private AssertionUtils() {
+        // Private constructor
     }
 
-    private static void extractMatchingValues(Object obj, String targetKey, List<String> results) {
-        if (obj instanceof Map<?, ?>) {
-            Map<?, ?> map = (Map<?, ?>) obj;
-            for (Map.Entry<?, ?> entry : map.entrySet()) {
-                if (targetKey.equals(entry.getKey())) {
-                    results.add(String.valueOf(entry.getValue()));
-                }
-                extractMatchingValues(entry.getValue(), targetKey, results);
-            }
-        } else if (obj instanceof List<?>) {
-            for (Object item : (List<?>) obj) {
-                extractMatchingValues(item, targetKey, results);
-            }
-        }
-    }
-
-    public static boolean verifyJsonKeyValues(Response response, Map<String, Object> expectedValues) {
-        boolean verification = true;
-        response.then().statusCode(200);
-        response.then().time(lessThan(getMaxLimit()));
-        String jsonStr = response.getBody().asString();
-        ExtentLogger.info(String.format("Verifying response against expected values: '%s'", expectedValues));
-        log(LogType.INFO, String.format("Verifying response against expected values: '%s'", expectedValues));
-
-        for (Map.Entry<String, Object> entry : expectedValues.entrySet()) {
-            String key = entry.getKey();
-            Object expected = entry.getValue();
-
-            if (expected instanceof String) {
-                boolean result = findValues(key, (String) expected, jsonStr);
-                ExtentLogger.info(String.format("Verification for key='%s', expected='%s': '%s'", key, expected, result));
-                log(LogType.INFO, String.format("Verification for key='%s', expected='%s': '%s'", key, expected, result));
-                if (!result) verification = false;
-
-            } else if (expected instanceof List<?>) {
-                for (Object val : (List<?>) expected) {
-                    boolean result = findValues(key, String.valueOf(val), jsonStr);
-                    ExtentLogger.info(String.format("Verification for key='%s', expected='%s': '%s'", key, val, result));
-                    log(LogType.INFO, String.format("Verification for key='%s', expected='%s': '%s'", key, val, result));
-                    if (!result) verification = false;
-                }
-            }
-        }
-
-        ExtentLogger.info(String.format("Overall verification result: %s", verification));
-        log(LogType.INFO, String.format("Overall verification result: %s", verification));
-        return verification;
-    }
-
-    public static boolean isResponseBodyEmpty(Response response) {
-        response.then().statusCode(200);
-        response.then().time(lessThan(getMaxLimit()));
-        String body = response.getBody().asString();
-
-        boolean result = (body == null || body.trim().isEmpty());
-
-        if (result) {
-            ExtentLogger.pass("Response body is empty as expected.");
-            log(LogType.INFO, "Response body is empty as expected.");
-        } else {
-            ExtentLogger.fail("Response body is not empty. Actual content: " + body);
-            log(LogType.ERROR, "Response body is not empty. Actual content: " + body);
-        }
-
-        return result;
-    }
-
-    public static boolean validateValueInXml(Response response, String objectName, String attributeName, String expectedValue) {
-        response.then().statusCode(200);
-        response.then().time(lessThan(getMaxLimit()));
-        String xml = response.getBody().asString();
-        ExtentLogger.info(String.format("Validating XML for tag='%s', attribute='%s', expectedValue='%s'", objectName, attributeName, expectedValue));
-        log(LogType.INFO, String.format("Validating XML for tag='%s', attribute='%s', expectedValue='%s'", objectName, attributeName, expectedValue));
-
-        try {
-            Document document = getDocument(xml);
-            NodeList nodes = document.getElementsByTagName(objectName);
-
-            for (int i = 0; i < nodes.getLength(); i++) {
-                Element element = (Element) nodes.item(i);
-                String actualValue = getElementValue(element, attributeName);
-                if (!actualValue.toLowerCase().contains(expectedValue.toLowerCase())) {
-                    ExtentLogger.fail(String.format("Expected value '%s' not found in tag '%s'", expectedValue, objectName));
-                    log(LogType.ERROR, String.format("Expected value '%s' not found in tag '%s'", expectedValue, objectName));
-                    return false;
-                }
-            }
-
-            ExtentLogger.pass("All matching elements contain the expected value.");
-            log(LogType.INFO, "All matching elements contain the expected value.");
-            return true;
-
-        } catch (Exception e) {
-            ExtentLogger.fail("Error parsing XML or validating value: " + e.getMessage());
-            log(LogType.ERROR, "Error parsing XML or validating value: " + e.getMessage());
-            return false;
-        }
-    }
-
-    public static boolean isXmlElementListEmpty(Response response, String listElementTag) {
-        response.then().statusCode(200);
-        response.then().time(lessThan(getMaxLimit()));
-        String xml = response.getBody().asString();
-        ExtentLogger.info(String.format("Checking if list element '%s' is empty in XML response", listElementTag));
-        log(LogType.INFO, String.format("Checking if list element '%s' is empty in XML response", listElementTag));
-
-        try {
-            Document document = getDocument(xml);
-            NodeList list = document.getElementsByTagName(listElementTag);
-
-            boolean result = list.getLength() > 0 && !list.item(0).hasChildNodes();
-            if (result) {
-                ExtentLogger.pass(String.format("Element '%s' list is empty.", listElementTag));
-                log(LogType.INFO, String.format("Element '%s' list is empty.", listElementTag));
-            } else {
-                ExtentLogger.fail(String.format("Element '%s' list is not empty.", listElementTag));
-                log(LogType.ERROR, String.format("Element '%s' list is not empty.", listElementTag));
-            }
-
-            return result;
-
-        } catch (Exception e) {
-            ExtentLogger.fail("Error parsing XML for list element check: " + e.getMessage());
-            log(LogType.ERROR, "Error parsing XML for list element check: " + e.getMessage());
-            return false;
-        }
-    }
-
-
-    private static Document getDocument(String xml) throws Exception {
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        DocumentBuilder builder = factory.newDocumentBuilder();
-        return builder.parse(new InputSource(new StringReader(xml)));
-    }
-
-    private static String getElementValue(Element parent, String tagName) {
-        NodeList nodeList = parent.getElementsByTagName(tagName);
-        if (nodeList.getLength() > 0) {
-            return nodeList.item(0).getTextContent();
-        }
-        return "";
-    }
-
-
-    public static boolean isResponseBodyEqualTo(Response response, String expectedText) {
-        response.then().statusCode(200);
-        response.then().time(lessThan(getMaxLimit()));
-        String actualBody = response.getBody().asString();
-
-        boolean result = actualBody.trim().equals(expectedText.trim());
-
-        if (result) {
-            ExtentLogger.pass("Response body matches the expected text.");
-            log(LogType.INFO, "Response body matches the expected text.");
-        } else {
-            ExtentLogger.fail(String.format("Response body does not match.\nExpected: %s\nActual: %s", expectedText, actualBody));
-            log(LogType.ERROR, String.format("Response body does not match.\nExpected: %s\nActual: %s", expectedText, actualBody));
-        }
-
-        return result;
-    }
-
-    public static boolean isStatusCodeEqualTo(Response response, int expectedStatusCode) {
+    /**
+     * Asserts that the response status code matches the expected status code.
+     * Logs the assertion result to ExtentReports.
+     *
+     * @param response           The {@link Response} object from the API call.
+     * @param expectedStatusCode The expected HTTP status code (e.g., 200, 201, 404).
+     */
+    public static void assertStatusCode(Response response, int expectedStatusCode) {
         int actualStatusCode = response.getStatusCode();
-
-        boolean result = (actualStatusCode == expectedStatusCode);
-
-        if (result) {
-            ExtentLogger.pass(String.format("Status code is as expected: %d", expectedStatusCode));
-            log(LogType.INFO, String.format("Status code is as expected: %d", expectedStatusCode));
-        } else {
-            ExtentLogger.fail(String.format("Status code mismatch. Expected: %d, Actual: %d", expectedStatusCode, actualStatusCode));
-            log(LogType.ERROR, String.format("Status code mismatch. Expected: %d, Actual: %d", expectedStatusCode, actualStatusCode));
+        try {
+            Assert.assertEquals(actualStatusCode, expectedStatusCode,
+                    "Status code mismatch. Expected: " + expectedStatusCode + ", Actual: " + actualStatusCode);
+            org.op_ra.reports.ExtentLogger.pass("Assertion PASSED: Status code is " + expectedStatusCode);
+        } catch (AssertionError e) {
+            org.op_ra.reports.ExtentLogger.fail("Assertion FAILED: Status code mismatch. Expected: " + expectedStatusCode + ", Actual: " + actualStatusCode);
+            org.op_ra.reports.ExtentLogger.fail("Response Body: <pre>" + response.getBody().asPrettyString() + "</pre>");
+            throw e; // Re-throw the assertion error to mark the test as failed
         }
-
-        return result;
     }
 
+    /**
+     * Asserts that the response Content-Type header matches the expected content type.
+     *
+     * @param response              The {@link Response} object.
+     * @param expectedContentType   The expected content type string (e.g., "application/json", "text/xml; charset=utf-8").
+     *                              The assertion is typically case-insensitive for the main type but sensitive for parameters like charset.
+     */
+    public static void assertContentType(Response response, String expectedContentType) {
+        String actualContentType = response.getContentType();
+        try {
+            // Using startsWith for flexibility, as Content-Type can have charset, etc.
+            // For exact match: Assert.assertEquals(actualContentType, expectedContentType, "Content-Type mismatch.");
+            Assert.assertTrue(actualContentType.toLowerCase().startsWith(expectedContentType.toLowerCase()),
+                    "Content-Type mismatch. Expected to start with: '" + expectedContentType + "', Actual: '" + actualContentType + "'");
+            org.op_ra.reports.ExtentLogger.pass("Assertion PASSED: Content-Type starts with '" + expectedContentType + "'. Actual: '" + actualContentType + "'");
+        } catch (AssertionError e) {
+            org.op_ra.reports.ExtentLogger.fail("Assertion FAILED: Content-Type mismatch. Expected to start with: '" + expectedContentType + "', Actual: '" + actualContentType + "'");
+            throw e;
+        }
+    }
 
+    /**
+     * Asserts that the response body (converted to a string) contains the expected text.
+     *
+     * @param response     The {@link Response} object.
+     * @param expectedText The text expected to be present in the response body.
+     */
+    public static void assertResponseBodyContains(Response response, String expectedText) {
+        String responseBody = response.getBody().asString();
+        try {
+            Assert.assertTrue(responseBody.contains(expectedText),
+                    "Response body does not contain the expected text: '" + expectedText + "'");
+            org.op_ra.reports.ExtentLogger.pass("Assertion PASSED: Response body contains text: '" + expectedText + "'");
+        } catch (AssertionError e) {
+            org.op_ra.reports.ExtentLogger.fail("Assertion FAILED: Response body does not contain the expected text: '" + expectedText + "'");
+            org.op_ra.reports.ExtentLogger.fail("Response Body: <pre>" + response.getBody().asPrettyString() + "</pre>");
+            throw e;
+        }
+    }
+
+    /**
+     * Asserts that a specific JSON path in the response body matches an expected value.
+     * Uses RestAssured'''s JsonPath for evaluation.
+     *
+     * @param response     The {@link Response} object.
+     * @param jsonPath     The JsonPath expression (e.g., "data.id", "user.name").
+     * @param expectedValue The expected value at the given JsonPath. Can be String, Integer, Boolean, etc.
+     */
+    public static void assertJsonPathValue(Response response, String jsonPath, Object expectedValue) {
+        Object actualValue = null;
+        try {
+            actualValue = response.jsonPath().get(jsonPath);
+            Assert.assertEquals(actualValue, expectedValue,
+                    "JSONPath value mismatch for path: '" + jsonPath + "'. Expected: '" + expectedValue + "', Actual: '" + actualValue + "'");
+            org.op_ra.reports.ExtentLogger.pass("Assertion PASSED: JSONPath '" + jsonPath + "' has value: '" + expectedValue + "'");
+        } catch (AssertionError e) {
+            org.op_ra.reports.ExtentLogger.fail("Assertion FAILED: JSONPath value mismatch for path: '" + jsonPath + "'. Expected: '" + expectedValue + "', Actual: '" + actualValue + "'");
+            org.op_ra.reports.ExtentLogger.fail("Response Body: <pre>" + response.getBody().asPrettyString() + "</pre>");
+            throw e;
+        } catch (Exception ex) { // Catch potential exceptions from jsonPath().get() if path is invalid or body not JSON
+             org.op_ra.reports.ExtentLogger.fail("Assertion FAILED: Error evaluating JSONPath '" + jsonPath + "'. Error: " + ex.getMessage());
+             org.op_ra.reports.ExtentLogger.fail("Response Body: <pre>" + response.getBody().asPrettyString() + "</pre>");
+            throw new AssertionError("Error evaluating JSONPath '" + jsonPath + "': " + ex.getMessage(), ex);
+        }
+    }
+
+    /**
+     * Asserts that a specific header in the response exists and matches an expected value.
+     *
+     * @param response      The {@link Response} object.
+     * @param headerName    The name of the header to check.
+     * @param expectedValue The expected value of the header.
+     */
+    public static void assertHeaderValue(Response response, String headerName, String expectedValue) {
+        String actualHeaderValue = response.getHeader(headerName);
+        try {
+            Assert.assertNotNull(actualHeaderValue, "Header '" + headerName + "' does not exist.");
+            Assert.assertEquals(actualHeaderValue, expectedValue,
+                    "Header '" + headerName + "' value mismatch. Expected: '" + expectedValue + "', Actual: '" + actualHeaderValue + "'");
+            org.op_ra.reports.ExtentLogger.pass("Assertion PASSED: Header '" + headerName + "' has value: '" + expectedValue + "'");
+        } catch (AssertionError e) {
+            org.op_ra.reports.ExtentLogger.fail("Assertion FAILED: Header '" + headerName + "' value mismatch. Expected: '" + expectedValue + "', Actual: '" + actualHeaderValue + "' (Header might be missing or value differs)");
+            throw e;
+        }
+    }
+
+    // Add more assertion methods as needed, for example:
+    // - Asserting response time is within a limit
+    // - Asserting JSON schema validity
+    // - Asserting array sizes or specific elements in JSON arrays
 }
-
-
