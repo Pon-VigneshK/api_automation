@@ -1,78 +1,80 @@
 package org.op_ra.utils;
 
-import com.github.javafaker.Faker;
-import org.apache.commons.lang3.RandomStringUtils;
-
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
+// Assuming Faker might be used here, or other data generation libraries.
+// import com.github.javafaker.Faker;
 
 /**
- * Utility class for generating test data using the JavaFaker library.
+ * Utility class for generating or manipulating common test data types.
+ * This class can provide methods for creating random strings, numbers,
+ * or more complex data structures needed for tests, potentially complementing
+ * {@link RandomUtils} or {@link JsonUtils}.
+ * <p>
+ * <b>Note:</b> The current content of this file is a placeholder.
+ * It should be populated with actual data utility methods relevant to the framework.
+ * </p>
+ * Example uses:
+ * <ul>
+ *     <li>Generating data in specific formats (e.g., UUIDs, formatted dates beyond DateUtils).</li>
+ *     <li>Creating collections of test data objects.</li>
+ *     <li>Transforming data from one format to another.</li>
+ * </ul>
  */
 public final class DataUtils {
 
-    // Private constructor to prevent instantiation of the class
+    // private static final Faker faker = new Faker(); // If using Faker
+
+    /**
+     * Private constructor to prevent instantiation of this utility class.
+     */
     private DataUtils() {
+        // Private constructor
     }
 
     /**
-     * Generates a random first name using the JavaFaker library.
+     * Example: Generates a random alphanumeric string of a specified length.
      *
-     * @return A random first name.
+     * @param length The desired length of the string.
+     * @return A random alphanumeric string.
+     * @deprecated This is an example method. Implement with actual random string generation logic.
      */
-    public static String getFirstName() {
-        return new Faker().name().firstName();
-    }
-
-    public static String fullName() {
-        return new Faker().name().fullName();
-    }
-
-    public static String expiryDate() {
-        return new Faker().business().creditCardExpiry();
-    }
-
-    public static String getLastName() {
-        return new Faker().name().lastName();
+    @Deprecated
+    public static String generateRandomAlphanumericString(int length) {
+        if (length <= 0) {
+            return "";
+        }
+        // Replace with actual implementation, e.g., using Apache Commons Lang RandomStringUtils
+        // return RandomStringUtils.randomAlphanumeric(length);
+        System.out.println("DataUtils.generateRandomAlphanumericString is a placeholder. Length: " + length);
+        // Simple placeholder implementation:
+        StringBuilder sb = new StringBuilder(length);
+        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        java.util.Random random = new java.util.Random();
+        for (int i = 0; i < length; i++) {
+            sb.append(chars.charAt(random.nextInt(chars.length())));
+        }
+        return sb.toString();
     }
 
     /**
-     * Generates a random string of digits with the specified count using the JavaFaker library.
+     * Example: Generates a random number within a given range as a string.
      *
-     * @param count The number of digits in the generated string.
-     * @return A random string of digits.
+     * @param min Minimum value (inclusive).
+     * @param max Maximum value (inclusive).
+     * @return A string representation of a random number in the range.
+     * @deprecated This is an example method. Consider using {@link RandomUtils#getRandomNumber(int, int)}
+     *             if integer output is acceptable, or refine this for specific string formatted numbers.
      */
-    public static String getRandomNumber(int count) {
-        return new Faker().number().digits(count);
+    @Deprecated
+    public static String generateRandomNumericString(int min, int max) {
+        // return String.valueOf(faker.number().numberBetween(min, max));
+        System.out.println("DataUtils.generateRandomNumericString is a placeholder. Min: " + min + ", Max: " + max);
+        java.util.Random random = new java.util.Random();
+        return String.valueOf(random.nextInt((max - min) + 1) + min);
     }
 
-    /**
-     * Generates a random string of alphabetic characters with the specified count using
-     * the Apache Commons Lang library.
-     *
-     * @param count The number of alphabetic characters in the generated string.
-     * @return A random string of alphabetic characters.
-     */
-    public static String getRandomAlphabets(int count) {
-        return RandomStringUtils.randomAlphabetic(count);
-    }
-
-    /**
-     * Generates a random website name in the format "https://{random alphabets}.com".
-     *
-     * @return A random website name.
-     */
-    public static String getRandomWebsiteName() {
-        return "https://" + DataUtils.getRandomAlphabets(10) + ".com";
-    }
-
-    public static String getCreditCardNumber() {
-        return new Faker().finance().creditCard();
-    }
-
-    public static String getCurrentdate() {
-        LocalDate currentDate = LocalDate.now();
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-        return currentDate.format(formatter);
-    }
+    // Add other relevant data utility methods here.
+    // For example, methods to:
+    // - Get current timestamp in a specific format (if not covered by DateUtils)
+    // - Generate unique IDs (UUIDs)
+    // - Manipulate collections or arrays of data for testing.
 }
