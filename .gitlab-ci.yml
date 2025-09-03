@@ -1,0 +1,19 @@
+Integration Testing:
+  stage: test
+  image: maven:3.8.6-openjdk-11
+  script:
+    - echo "Executing Atlas Practice QE automation test cases..."
+    - mvn clean test -U -Patlas-tests -Dtestng.groups=fullRegression -Dmaven.wagon.http.ssl.insecure=true -Daether.connector.https.securityMode=insecure
+  rules:
+    # Runs from GitLab schedule when RUN_SUITE=smoke
+    - if: '$CI_PIPELINE_SOURCE == "schedule"'
+    # Runs when triggered from another pipeline
+    - if: '$CI_PIPELINE_SOURCE == "trigger" && $RUN_SUITE == "smoke"'
+    # Allow manual run in any other case
+    - when: manual
+  artifacts:
+    when: always
+    expire_in: 7 days
+    paths:
+      - logs/
+      - extent-test-output

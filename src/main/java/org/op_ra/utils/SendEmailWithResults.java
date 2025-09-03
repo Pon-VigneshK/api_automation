@@ -1,138 +1,223 @@
 package org.op_ra.utils;
 
-import org.apache.commons.mail.DefaultAuthenticator;
-import org.apache.commons.mail.EmailAttachment;
-import org.apache.commons.mail.HtmlEmail; // Using HtmlEmail for better formatting and attachments
-import org.op_ra.constants.FrameworkConstants; // For report path
-import java.io.File; // Import for File class
+import org.op_ra.constants.FrameworkConstants;
+import org.op_ra.enums.ConfigProperties;
 
-/**
- * Utility class for sending email notifications with test execution results.
- * This class uses Apache Commons Email library to construct and send emails.
- * Email server configuration and recipient details are fetched using {@link EmailConfig}.
- * <p>
- * The primary method {@link #sendEmail()} is typically called at the end of a test suite execution,
- * often from a TestNG listener (e.g., {@code ISuiteListener#onFinish}).
- * </p>
- * It attaches the main ExtentReport HTML file to the email.
- */
-public final class SendEmailWithResults {
+import javax.activation.DataHandler;
+import javax.activation.DataSource;
+import javax.activation.FileDataSource;
+import javax.mail.*;
+import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeBodyPart;
+import javax.mail.internet.MimeMessage;
+import javax.mail.internet.MimeMultipart;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
 
-    /**
-     * Private constructor to prevent instantiation of this utility class.
-     */
-    private SendEmailWithResults() {
-        // Private constructor
+import static org.op_ra.constants.FrameworkConstants.getBranchName;
+import static org.op_ra.enums.EmailProperties.EMAILPASSWORD;
+import static org.op_ra.enums.EmailProperties.FROMEMAIL;
+import static org.op_ra.utils.EmailPropertyUtils.getValue;
+
+
+public class SendEmailWithResults {
+
+    public static void sendEmail(int passedCount, int failedCount, int skippedCount, String executionDuration) {
+        Map<String, String> data = new HashMap<>();
+        String body;
+        LocalTime currentTime = LocalTime.now();
+        LocalDate currentDate = LocalDate.now();
+        LocalTime morningEnd = LocalTime.of(12, 0);
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        String formattedDate = currentDate.format(dateFormatter);
+        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("hh:mm a");
+        String formattedTime = currentTime.format(timeFormatter);
+        String greeting;
+        if (currentTime.isBefore(morningEnd)) {
+            greeting = "Good Morning";
+        } else {
+            greeting = "Good Afternoon";
+        }
+
+
+        String subject = "";
+        String environment = "";
+        switch (getBranchName()) {
+            case "main":
+                environment = "main";
+                subject = "Atlas Practice Service - UAT/Staging Test Automation Report for the Execution on " + formattedDate + " at " + formattedTime;
+                break;
+            case "dev-qe":
+                environment = "dev-qe";
+                subject = "Atlas Practice Service - QE Unit Test Automation Report for the Execution on " + formattedDate + " at " + formattedTime;
+                break;
+            case "dry-run":
+                environment = "dry-run";
+                subject = "Atlas Practice Service - Dry Run Automation Test Report for the Execution on " + formattedDate + " at " + formattedTime;
+                break;
+            default:
+                environment = "local";
+                subject = "Atlas Practice Service - Local Run Automation Test Execution Report ( " + formattedDate + " , " + formattedTime + " )";
+                break;
+        }
+
+        String runmode = PropertyUtils.getValue(ConfigProperties.RUNMODE);
+        if (runmode.equalsIgnoreCase("remote")) {
+
+            String query = String.format("SELECT * FROM service_automation_runner_manager.atlas_practice_automation_alert_recipients WHERE git_branch = '%s';", environment);
+            data = DataBaseConnectionUtils.retrieveRowData(query);
+        } else if (runmode.equalsIgnoreCase("local")) {
+            String query = String.format("SELECT * FROM atlas_practice_automation_alert_recipients WHERE git_branch = '%s';", environment);
+            data = DataBaseConnectionUtils.retrieveRowDataSqLite(query);
+        }
+
+        if (data.get("email_enabled").equalsIgnoreCase("yes") && environment != null) {
+            String attachmentPath = FrameworkConstants.getReportPath();
+
+            // Get CI environment variables
+            String branchName = System.getenv("CI_COMMIT_REF_NAME");
+            String repoName = System.getenv("CI_PROJECT_NAME");
+            String pipelineId = System.getenv("CI_PIPELINE_ID");
+            String pipelineUrl = System.getenv("CI_PIPELINE_URL");
+
+            // Calculate total tests
+            int totalTests = passedCount + failedCount + skippedCount;
+
+            // Determine execution environment based on branch
+            String executionEnvironment = "";
+            switch (environment) {
+                case "main":
+                    executionEnvironment = "UAT/Staging";
+                    break;
+                case "dev-qe":
+                    executionEnvironment = "QE";
+                    break;
+                case "dry-run":
+                    executionEnvironment = "Dry Run";
+                    break;
+                default:
+                    executionEnvironment = "Local";
+                    break;
+            }
+            if (!executionEnvironment.equals("Local")) {
+                body = "Hi Team,\n\n" +
+                        "Please find attached the Atlas Practice Service Automation Execution Report for the latest test cycle. Below are the execution details:\n\n" +
+                        "Execution Summary:\n" +
+                        "==================\n" +
+                        "Project / Module: " + repoName + "\n" +
+                        "Execution Environment: " + executionEnvironment + "\n" +
+                        "Triggered From: GitLab CI/CD Pipeline\n" +
+                        "Branch: " + (branchName != null ? branchName : getBranchName()) + "\n" +
+                        "Execution Date & Time: " + formattedDate + " at " + formattedTime + " IST\n" +
+                        "Total Test Cases Executed: " + totalTests + "\n" +
+                        "Passed: " + passedCount + "\n" +
+                        "Failed: " + failedCount + "\n" +
+                        "Skipped: " + skippedCount + "\n" +
+                        "Execution Duration: " + executionDuration + "\n" +
+                        "Pipeline ID: " + (pipelineId != null ? pipelineId : "N/A") + "\n" +
+                        "Pipeline URL: " + (pipelineUrl != null ? pipelineUrl : "N/A") + "\n\n" +
+                        "======================\n" +
+                        "Attachment:\n" +
+                        "======================\n" +
+                        "AtlasPractice_Service_" + formattedDate + "_" + formattedTime + ".html – Detailed Automation Execution Report\n\n" +
+                        "Kindly review the report and share any feedback or required follow-ups.\n\n" +
+                        "Regards,\n" +
+                        "QE Automation Team";
+            } else {
+                body = "Hi Team,\n\n" +
+                        "Please find attached the Atlas Practice Service Automation Execution Report for the latest test cycle. Below are the execution details:\n\n" +
+                        "Execution Summary:\n" +
+                        "==================\n" +
+                        "Project / Module: " + FrameworkConstants.getServiceName() + "\n" +
+                        "Execution Environment: " + executionEnvironment + "\n" +
+                        "Triggered From: Local\n" +
+                        "Execution Date & Time: " + formattedDate + " at " + formattedTime + " IST\n" +
+                        "Total Test Cases Executed: " + totalTests + "\n" +
+                        "Passed: " + passedCount + "\n" +
+                        "Failed: " + failedCount + "\n" +
+                        "Skipped: " + skippedCount + "\n" +
+                        "Execution Duration: " + executionDuration + "\n" +
+                        "======================\n" +
+                        "Attachment:\n" +
+                        "======================\n" +
+                        "AtlasPractice_Service_" + formattedDate + "_" + formattedTime + ".html – Detailed Automation Execution Report\n\n" +
+                        "Kindly review the report and share any feedback or required follow-ups.\n\n" +
+                        "Regards,\n" +
+                        "QE Automation Team";
+            }
+
+            String from = getValue(FROMEMAIL);
+            String host = "smtp.gmail.com";
+            String password = getValue(EMAILPASSWORD);
+
+
+            String to = data.get("email_address");
+
+            Properties properties = System.getProperties();
+            properties.put("mail.smtp.host", host);
+            properties.put("mail.smtp.port", "587");
+            properties.put("mail.smtp.auth", "true");
+            properties.put("mail.smtp.starttls.enable", "true");
+
+            Session session = Session.getInstance(properties, new javax.mail.Authenticator() {
+                protected PasswordAuthentication getPasswordAuthentication() {
+                    return new PasswordAuthentication(from, password);
+                }
+            });
+
+            try {
+                MimeMessage message = new MimeMessage(session);
+                message.setFrom(new InternetAddress(from));
+
+                if (to != null && !to.isEmpty()) {
+                    String[] toEmails = to.split(",");
+                    for (String toEmail : toEmails) {
+                        message.addRecipient(Message.RecipientType.TO, new InternetAddress(toEmail.trim()));
+                    }
+                }
+                message.setSubject(subject);
+
+                MimeBodyPart messageBodyPart = new MimeBodyPart();
+                messageBodyPart.setText(body);
+
+                Multipart multipart = new MimeMultipart();
+                multipart.addBodyPart(messageBodyPart);
+
+                // Attach the report file
+                messageBodyPart = new MimeBodyPart();
+                DataSource source = new FileDataSource(attachmentPath);
+                messageBodyPart.setDataHandler(new DataHandler(source));
+                messageBodyPart.setFileName("AtlasPractice_Service_" + formattedDate + "_" + formattedTime + ".html");
+                multipart.addBodyPart(messageBodyPart);
+
+                message.setContent(multipart);
+
+                Transport.send(message);
+                System.out.println("Email Sent Successfully.");
+            } catch (MessagingException mex) {
+                mex.printStackTrace();
+            }
+        }
+
     }
 
     /**
-     * Sends an email with the test execution report attached.
-     * Email configuration (server, credentials, recipients, subject) is retrieved from {@link EmailConfig}.
-     * The ExtentReport HTML file path is retrieved from {@link FrameworkConstants#getReportPath()}.
-     * <p>
-     * If email sending is disabled via {@link EmailConfig#isEmailSendingEnabled()}, this method does nothing.
-     * </p>
-     *
-     * @throws RuntimeException if an error occurs during email construction or sending.
-     *                          The underlying {@link org.apache.commons.mail.EmailException} is wrapped.
+     * Backward compatibility method - calls the main sendEmail method with default counts
      */
     public static void sendEmail() {
-        if (!EmailConfig.isEmailSendingEnabled()) {
-            System.out.println("SendEmailWithResults: Email sending is disabled in configuration.");
-            // FrameworkLogger.log(LogType.INFO, "Email sending is disabled.");
-            return;
-        }
-
-        try {
-            HtmlEmail email = new HtmlEmail(); // Use HtmlEmail for attachments and HTML content
-
-            // Set SMTP server details
-            email.setHostName(EmailConfig.getEmailHost());
-            String portStr = EmailConfig.getEmailPort();
-            if (portStr != null && !portStr.trim().isEmpty()) {
-                 try {
-                    email.setSmtpPort(Integer.parseInt(portStr));
-                 } catch (NumberFormatException e) {
-                     System.err.println("SendEmailWithResults: Invalid email port format: " + portStr + ". Using default port.");
-                     // Log this error. Depending on the mail server, default might work or fail.
-                 }
-            }
-
-            // Set authentication if username/password are provided
-            String username = EmailConfig.getEmailUsername();
-            String password = EmailConfig.getEmailPassword();
-            if (username != null && !username.trim().isEmpty() && password != null && !password.trim().isEmpty()) {
-                email.setAuthenticator(new DefaultAuthenticator(username, password));
-                email.setSSLOnConnect(true); // Common for modern SMTP; make this configurable if needed (e.g. setStartTLSEnabled)
-            }
-
-            // Set sender and recipients
-            email.setFrom(EmailConfig.getFromEmailAddress());
-            String toRecipients = EmailConfig.getToRecipients();
-            if (toRecipients != null && !toRecipients.trim().isEmpty()) {
-                for (String to : toRecipients.split(",")) {
-                    email.addTo(to.trim());
-                }
-            } else {
-                 System.err.println("SendEmailWithResults: No '''To''' recipients configured. Email will not be sent.");
-                 return; // Or throw an error
-            }
-
-            String ccRecipients = EmailConfig.getCcRecipients();
-            if (ccRecipients != null && !ccRecipients.trim().isEmpty()) {
-                for (String cc : ccRecipients.split(",")) {
-                    email.addCc(cc.trim());
-                }
-            }
-
-            // Set email subject and body
-            email.setSubject(EmailConfig.getEmailSubject() + " - " + DateUtils.getCurrentDateTime()); // Add timestamp to subject
-
-            // Construct HTML body
-            // You can make this more sophisticated with actual test summary data if available
-            String htmlBody = "<html><body>"
-                          + "<p>Hello Team,</p>"
-                          + "<p>Please find attached the API test execution report for <b>"
-                          + FrameworkConstants.getServiceName() // Assuming service name is available
-                          + "</b> (Suite: " + FrameworkConstants.getReportClassName() + ")."
-                          + "</p>"
-                          + "<p>Execution completed on: " + DateUtils.getCurrentDateTime() + "</p>"
-                          + "<p>Regards,<br>Automation Team</p>"
-                          + "</body></html>";
-            email.setHtmlMsg(htmlBody);
-            // Set a plain text alternative for email clients that don'''t support HTML
-            email.setTextMsg("Hello Team, Please find the attached API test execution report. Regards, Automation Team.");
-
-
-            // Attach the ExtentReport
-            String reportPath = FrameworkConstants.getReportPath();
-            if (reportPath != null && !reportPath.isEmpty()) {
-                File reportFile = new File(reportPath);
-                if (reportFile.exists()) {
-                    EmailAttachment attachment = new EmailAttachment();
-                    attachment.setPath(reportPath);
-                    attachment.setDisposition(EmailAttachment.ATTACHMENT);
-                    attachment.setDescription("Test Execution Report");
-                    attachment.setName(reportFile.getName()); // Set a user-friendly name for the attachment
-                    email.attach(attachment);
-                } else {
-                    System.err.println("SendEmailWithResults: Report file not found at: " + reportPath + ". Email will be sent without attachment.");
-                    // FrameworkLogger.log(LogType.WARN, "Report file not found for email attachment: " + reportPath);
-                }
-            } else {
-                 System.err.println("SendEmailWithResults: Report path is empty. Email will be sent without attachment.");
-            }
-
-            // Send the email
-            email.send();
-            System.out.println("SendEmailWithResults: Email sent successfully!");
-            // FrameworkLogger.log(LogType.INFO, "Test execution report email sent successfully.");
-
-        } catch (org.apache.commons.mail.EmailException e) {
-            System.err.println("SendEmailWithResults: Failed to send email. Error: " + e.getMessage());
-            // FrameworkLogger.log(LogType.ERROR, "Failed to send email: " + e.getMessage());
-            // e.printStackTrace(); // For debugging, consider logging stack trace
-            throw new RuntimeException("Failed to send email with test results.", e);
-        }
+        sendEmail(0, 0, 0, "00:00:00");
     }
+
+    /**
+     * Backward compatibility method - calls the main sendEmail method with default duration
+     */
+    public static void sendEmail(int passedCount, int failedCount, int skippedCount) {
+        sendEmail(passedCount, failedCount, skippedCount, "00:00:00");
+    }
+
+
 }

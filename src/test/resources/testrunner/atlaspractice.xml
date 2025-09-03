@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd">
+<suite name="Atlas_Practice" data-provider-thread-count="3">
+    <listeners>
+        <listener class-name="org.op_ra.listeners.ListenerClass"></listener>
+        <listener class-name="org.op_ra.listeners.MethodInterceptor"></listener>
+        <listener class-name="org.op_ra.listeners.AnnotationTransformer"></listener>
+    </listeners>
+    <test name="Atlas_Practice_Automation" thread-count="1">
+
+        <classes>
+            <class name="org.op_ra.tests.atlaspracticeservice.TestAdminController"></class>
+            <class name="org.op_ra.tests.atlaspracticeservice.TestAppointmentController"></class>
+            <class name="org.op_ra.tests.atlaspracticeservice.TestAppointmentControllerNegative"></class>
+            <class name="org.op_ra.tests.atlaspracticeservice.TestAppointmentTypeController"></class>
+            <class name="org.op_ra.tests.atlaspracticeservice.TestCorrespondentController"></class>
+            <class name="org.op_ra.tests.atlaspracticeservice.TestDepartmentController"></class>
+            <class name="org.op_ra.tests.atlaspracticeservice.TestDepartmentControllerNegative"></class>
+            <class name="org.op_ra.tests.atlaspracticeservice.TestEventSyncController"></class>
+            <class name="org.op_ra.tests.atlaspracticeservice.TestInsurancePolicyController"></class>
+            <class name="org.op_ra.tests.atlaspracticeservice.TestLocationController"></class>
+            <class name="org.op_ra.tests.atlaspracticeservice.TestLocationControllerNegative"></class>
+            <class name="org.op_ra.tests.atlaspracticeservice.TestOrganizationController"></class>
+            <class name="org.op_ra.tests.atlaspracticeservice.TestOrganizationControllerNegative"></class>
+            <class name="org.op_ra.tests.atlaspracticeservice.TestPatientBalanceController"></class>
+            <class name="org.op_ra.tests.atlaspracticeservice.TestPatientCareTeamController"></class>
+            <class name="org.op_ra.tests.atlaspracticeservice.TestPatientController"></class>
+            <class name="org.op_ra.tests.atlaspracticeservice.TestPatientControllerNegative"></class>
+            <class name="org.op_ra.tests.atlaspracticeservice.TestPayerController"></class>
+            <class name="org.op_ra.tests.atlaspracticeservice.TestPharmacyController"></class>
+            <class name="org.op_ra.tests.atlaspracticeservice.TestPracticeController"></class>
+            <class name="org.op_ra.tests.atlaspracticeservice.TestPracticeControllerNegative"></class>
+            <class name="org.op_ra.tests.atlaspracticeservice.TestProviderController"></class>
+            <class name="org.op_ra.tests.atlaspracticeservice.TestProviderControllerNegative"></class>
+            <class name="org.op_ra.tests.atlaspracticeservice.TestScheduleController"></class>
+            <class name="org.op_ra.tests.atlaspracticeservice.TestStaffController"></class>
+            <class name="org.op_ra.tests.atlaspracticeservice.TestStaffControllerNegative"></class>
+            <class name="org.op_ra.tests.atlaspracticeservice.TestStaffLocationController"></class>
+            <class name="org.op_ra.tests.atlaspracticeservice.TestStaffPortalAccountController"></class>
+            <class name="org.op_ra.tests.atlaspracticeservice.TestVisitTemplateController"></class>
+
+        </classes>
+    </test>
+</suite>

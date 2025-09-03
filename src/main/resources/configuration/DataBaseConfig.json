@@ -1,7 +1,7 @@
 {
-  "hostname": "localhost",
+  "hostname": "glados-aurora-dev.cluster-cqkezfpvhepv.us-east-1.rds.amazonaws.com",
   "port": 3306,
-  "schema": "service_automation",
-  "dbusername": "root",
-  "dbpassword": "Test123#"
+  "schema": "glados_practice_dev",
+  "dbusername": "bWFzdGVyLXVzZXI=",
+  "dbpassword": "V2F3YT15dW1teTQwMA=="
 }

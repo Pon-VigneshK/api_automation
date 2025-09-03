@@ -2,6 +2,6 @@
   "selectqueries": {
   },
   "runnerlistqueries": {
-    "testCaseLists": "SELECT * FROM open_runner_manager;"
+    "testCaseLists": "SELECT * FROM atlas_practice_runner_manager;"
   }
 }

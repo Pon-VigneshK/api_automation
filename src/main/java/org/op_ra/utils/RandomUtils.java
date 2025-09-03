@@ -1,109 +1,134 @@
 package org.op_ra.utils;
 
 import com.github.javafaker.Faker;
+import org.apache.commons.lang3.RandomStringUtils;
+
+import java.security.SecureRandom;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 
 /**
- * Utility class for generating random test data using the JavaFaker library.
- * Provides methods to get various types of fake data such as names, numbers, and more.
- * This helps in creating dynamic and realistic test data.
+ * Utility class for generating random strings.
  */
 public final class RandomUtils {
 
-    // Static instance of Faker to be reused.
-    private static final Faker faker = new Faker();
-
     /**
-     * Private constructor to prevent instantiation of this utility class.
-     */
-    private RandomUtils() {
-        // Private constructor
-    }
-
-    /**
-     * Generates a random integer within a specified range (inclusive).
+     * Generates a random first name using the JavaFaker library.
      *
-     * @param min The minimum value (inclusive).
-     * @param max The maximum value (inclusive).
-     * @return A random integer between min and max.
-     */
-    public static int getRandomNumber(int min, int max) {
-        return faker.number().numberBetween(min, max);
-    }
-
-    /**
-     * Generates a random first name.
-     *
-     * @return A string representing a random first name.
+     * @return A random first name.
      */
     public static String getFirstName() {
-        return faker.name().firstName();
+        return new Faker().name().firstName();
     }
 
-    /**
-     * Generates a random last name.
-     *
-     * @return A string representing a random last name.
-     */
+    public static String fullName() {
+        return new Faker().name().fullName();
+    }
+
+    public static String expiryDate() {
+        return new Faker().business().creditCardExpiry();
+    }
+
     public static String getLastName() {
-        return faker.name().lastName();
+        return new Faker().name().lastName();
     }
 
     /**
-     * Generates a random full name.
+     * Generates a random string of digits with the specified count using the JavaFaker library.
      *
-     * @return A string representing a random full name.
+     * @param count The number of digits in the generated string.
+     * @return A random string of digits.
      */
-    public static String getFullName() {
-        return faker.name().fullName();
+    public static String getRandomNumber(int count) {
+        return new Faker().number().digits(count);
     }
 
     /**
-     * Generates a random email address.
+     * Generates a random string of alphabetic characters with the specified count using
+     * the Apache Commons Lang library.
      *
-     * @return A string representing a random email address.
+     * @param count The number of alphabetic characters in the generated string.
+     * @return A random string of alphabetic characters.
      */
-    public static String getEmailAddress() {
-        return faker.internet().emailAddress();
+    public static String getRandomAlphabets(int count) {
+        return RandomStringUtils.randomAlphabetic(count);
     }
 
     /**
-     * Generates a random street address.
+     * Generates a random website name in the format "https://{random alphabets}.com".
      *
-     * @return A string representing a random street address.
+     * @return A random website name.
      */
-    public static String getStreetAddress() {
-        return faker.address().streetAddress();
+    public static String getRandomWebsiteName() {
+        return "https://" + getRandomAlphabets(10) + ".com";
+    }
+
+    public static String getCreditCardNumber() {
+        return new Faker().finance().creditCard();
+    }
+
+    public static String getCurrentdate() {
+        LocalDate currentDate = LocalDate.now();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        return currentDate.format(formatter);
+    }
+
+    // SecureRandom instance for generating random numbers
+    private static final SecureRandom random = new SecureRandom();
+
+    // String containing all numeric characters
+    private static final String NUMERIC_STRING = "0123456789";
+
+    // String containing all uppercase alphabet characters
+    private static final String ALPHABET_STRING = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+    // Private constructor to prevent instantiation
+    private RandomUtils() {
     }
 
     /**
-     * Generates a random city name.
+     * Generates a random numeric string of the specified length.
      *
-     * @return A string representing a random city name.
+     * @param length The length of the generated numeric string.
+     * @return A random numeric string.
      */
-    public static String getCityName() {
-        return faker.address().cityName();
+    public static String generateRandomNumericString(int length) {
+        StringBuilder sb = new StringBuilder(length);
+        for (int i = 0; i < length; i++) {
+            // Append a random numeric character to the StringBuilder
+            sb.append(NUMERIC_STRING.charAt(random.nextInt(NUMERIC_STRING.length())));
+        }
+        return sb.toString();
     }
 
     /**
-     * Generates a random country name.
+     * Generates a random string of the specified length using uppercase alphabet characters.
      *
-     * @return A string representing a random country name.
+     * @param length The length of the generated string.
+     * @return A random string.
      */
-    public static String getCountryName() {
-        return faker.address().country();
+    public static String generateRandomString(int length) {
+        StringBuilder sb = new StringBuilder(length);
+        for (int i = 0; i < length; i++) {
+            // Append a random alphabet character to the StringBuilder
+            sb.append(ALPHABET_STRING.charAt(random.nextInt(ALPHABET_STRING.length())));
+        }
+        return sb.toString();
     }
 
     /**
-     * Generates a random job title.
+     * Generates a random string of the specified length using uppercase alphabets,
+     * numeric characters, and special characters.
      *
-     * @return A string representing a random job title.
+     * @param length The length of the generated string.
+     * @return A random alphanumeric string with special characters.
      */
-    public static String getJobTitle() {
-        return faker.job().title();
+    public static String generateRandomAlphaNumericSpecialString(int length) {
+        String characterSet = ",.";
+        StringBuilder sb = new StringBuilder(length);
+        for (int i = 0; i < length; i++) {
+            sb.append(characterSet.charAt(random.nextInt(characterSet.length())));
+        }
+        return sb.toString();
     }
-
-    // Add more methods as needed for other types of fake data, e.g.:
-    // faker.phoneNumber().cellPhone();
-    // faker.lorem().sentence();
-    // faker.date().birthday();
 }

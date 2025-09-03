@@ -1,154 +1,200 @@
 package org.op_ra.listeners;
 
 import org.op_ra.annotations.FrameworkAnnotation;
+import org.op_ra.constants.FrameworkConstants;
 import org.op_ra.reports.ExtentLogger;
 import org.op_ra.reports.ExtentReport;
-import org.op_ra.reports.FrameworkLogger;
-import org.op_ra.utils.SendEmailWithResults;
+import org.op_ra.utils.*;
 import org.testng.ISuite;
 import org.testng.ISuiteListener;
 import org.testng.ITestListener;
 import org.testng.ITestResult;
 
-import java.io.IOException; // Added import for IOException
+import java.time.LocalDateTime;
 import java.util.Arrays;
 
 import static org.op_ra.enums.LogType.*;
 import static org.op_ra.reports.FrameworkLogger.log;
-import static org.op_ra.utils.ReportDatabaseController.storeReportInDatabase;
+import static org.op_ra.utils.ReportDatabaseController.logResult;
 
 /**
- * Implements {@link org.testng.ITestListener} and {@link org.testng.ISuiteListener}
- * to customize TestNG test execution lifecycle.
- * This class is primarily used for initializing and flushing ExtentReports,
- * creating test entries in the report, logging test status (pass/fail/skip),
- * and triggering actions like sending email notifications or storing results in a database.
- * <br>
- * Ensure this listener is configured in your TestNG XML suite file:
- * <pre>{@code
- * <listeners>
- *     <listener class-name="org.op_ra.listeners.ListenerClass"/>
- * </listeners>
- * }</pre>
+ * Implements {@link org.testng.ITestListener} and {@link org.testng.ISuiteListener} to leverage the abstract methods.
+ * Mostly used to assist in extent report generation.
+ * <pre>Please make sure to add the listener details in the testng.xml file.</pre>
  */
 public class ListenerClass implements ITestListener, ISuiteListener {
 
+    private static long suiteStartTime;
+    private static int passedCount = 0;
+    private static int failedCount = 0;
+    private static int skippedCount = 0;
+
     /**
-     * Initializes the ExtentReports at the beginning of a TestNG suite execution.
-     * Retrieves the suite name from the TestNG XML file to be used in the report.
+     * Initializes the reports with the specified file name.
      *
-     * @param suite The TestNG suite that is about to start.
-     * @see ExtentReport#initReports(String)
+     * @see ExtentReport
      */
     @Override
     public void onStart(ISuite suite) {
+        suiteStartTime = System.currentTimeMillis();
+        passedCount = 0;
+        failedCount = 0;
+        skippedCount = 0;
+        // Initialize Extent and generate a unique runId for this suite
         ExtentReport.initReports(suite.getXmlSuite().getName());
-        log(INFO, "Test Suite Started: " + suite.getName());
+        ExecutionContext.initRunIdIfAbsent();
+        // Optional: pick buildVersion/triggeredBy from system properties if provided
+        ExecutionContext.setBuildVersion(System.getProperty("buildVersion", ExecutionContext.getBuildVersion()));
+        ExecutionContext.setTriggeredBy(System.getProperty("triggeredBy", ExecutionContext.getTriggeredBy()));
     }
 
     /**
-     * Flushes the ExtentReports at the end of a TestNG suite execution.
-     * This ensures all test information is written to the report file.
-     * Also triggers sending an email with the test results.
+     * Terminates the reports.
      *
-     * @param suite The TestNG suite that has finished.
-     * @see ExtentReport#flushReports()
-     * @see SendEmailWithResults#sendEmail()
+     * @see ExtentReport
      */
     @Override
     public void onFinish(ISuite suite) {
         try {
             ExtentReport.flushReports();
-            SendEmailWithResults.sendEmail(); // Consider making this configurable
-            log(INFO, "Test Suite Finished: " + suite.getName());
-        } catch (IOException e) { // Catch specific IOException
-            log(ERROR, "Error during report flushing or email sending: " + e.getMessage());
-            // Consider re-throwing as a runtime exception if it is critical
-            // throw new RuntimeException("Error finalizing reports or sending email", e);
-        } catch (Exception e) { // Catch other potential exceptions
-            log(ERROR, "An unexpected error occurred during suite finish: " + e.getMessage());
-            // throw new RuntimeException("Unexpected error during suite finish", e);
+
+            // Calculate execution duration
+            long suiteEndTime = System.currentTimeMillis();
+            long durationMillis = suiteEndTime - suiteStartTime;
+            String executionDuration = formatDuration(durationMillis);
+
+            // Send email with actual test counts and duration
+            SendEmailWithResults.sendEmail(passedCount, failedCount, skippedCount, executionDuration);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
     /**
-     * Creates a new test entry in the ExtentReport when a TestNG test method starts.
-     * Retrieves author and category information from the {@link FrameworkAnnotation}
-     * if present on the test method.
+     * Starts a test node for each TestNG test.
      *
-     * @param result The result of the test method that is about to start.
-     * @see ExtentReport#createTest(String)
-     * @see ExtentReport#addAuthors(String[])
-     * @see ExtentReport#addCategories(org.op_ra.enums.CategoryType[])
+     * @see ExtentReport
      * @see FrameworkAnnotation
      */
     @Override
     public void onTestStart(ITestResult result) {
         FrameworkAnnotation annotation = result.getMethod().getConstructorOrMethod()
                 .getMethod().getAnnotation(FrameworkAnnotation.class);
-        ExtentReport.createTest("<span style='font-weight:bold;color:darkblue;'>Test Case: </span>"
-                + result.getMethod().getMethodName()); // Enhanced test name display
-        if (annotation != null) {
-            ExtentReport.addAuthors(annotation.author());
-            ExtentReport.addCategories(annotation.category());
+        ExtentReport.createTest("<span style='color: green;'>TestCase Name:</span>"
+                + result.getMethod().getMethodName());
+        ExtentReport.addAuthors(annotation.author());
+        ExtentReport.addCategories(annotation.category());
+        // Reset iteration when test method changes; otherwise keep for retries
+        String methodName = result.getMethod().getMethodName();
+        if (!methodName.equals(CurrentTestTracker.get())) {
+            TestRunContext.reset();
+            CurrentTestTracker.set(methodName);
         }
-        log(INFO, "Test Started: " + result.getMethod().getMethodName());
+        // Clear per-test metrics at start
+        TestMetrics.clear();
     }
 
     /**
-     * Logs the test as "PASS" in the ExtentReport and stores the result in the database.
+     * Marks the test as pass and logs it in the report.
      *
-     * @param result The result of the successfully completed test method.
-     * @see ExtentLogger#pass(String)
-     * @see org.op_ra.utils.ReportDatabaseController#storeReportInDatabase(String, String)
+     * @see ExtentLogger
      */
     @Override
     public void onTestSuccess(ITestResult result) {
-        storeReportInDatabase(result.getMethod().getMethodName(), "Pass");
-        ExtentLogger.pass("<span style='font-weight:bold;color:green;'>PASSED: </span>" + result.getMethod().getMethodName());
-        log(INFO, result.getMethod().getMethodName() + " is PASSED.");
+        passedCount++;
+        logResult(
+                ExecutionContext.getRunId(),
+                TestRunContext.getIterationId(),
+                ExecutionContext.getServiceName(),
+                result.getMethod().getMethodName(),
+                "Pass",
+                FrameworkConstants.getBranchName(),
+                TestMetrics.getResponseTimeMs(),
+                TestMetrics.getHttpStatusCode(),
+                ExecutionContext.getBuildVersion(),
+                ExecutionContext.getTriggeredBy(),
+                null,
+                LocalDateTime.now()
+        );
+        ExtentLogger.pass(result.getMethod().getMethodName() + " is passed !!");
+        log(INFO, result.getMethod().getMethodName() + " is passed !!");
         log(INFO, "------------------------------------------------------------");
+        TestRunContext.clear();
+        TestMetrics.clear();
     }
 
     /**
-     * Logs the test as "FAIL" in the ExtentReport, including the exception message and stack trace.
-     * Stores the result in the database.
+     * Marks the test as fail and logs it in the report.
      *
-     * @param result The result of the failed test method.
-     * @see ExtentLogger#fail(String)
-     * @see org.op_ra.utils.ReportDatabaseController#storeReportInDatabase(String, String)
+     * @see org.op_ra.reports.ExtentLogger
      */
     @Override
     public void onTestFailure(ITestResult result) {
-        storeReportInDatabase(result.getMethod().getMethodName(), "Fail");
-        String testName = result.getMethod().getMethodName();
-        ExtentLogger.fail("<span style='font-weight:bold;color:red;'>FAILED: </span>" + testName);
-        ExtentLogger.fail("Failure Reason: " + result.getThrowable().getMessage());
-        // ExtentLogger.fail("<details><summary>Click to see Stack Trace</summary>"
-        //         + Arrays.toString(result.getThrowable().getStackTrace()).replaceAll(",", "<br>")
-        //         + "</details>"); // Logging stack trace in a collapsible way
-        log(ERROR, testName + " is FAILED due to: " + result.getThrowable().getMessage());
-        FrameworkLogger.log(DEBUG, Arrays.toString(result.getThrowable().getStackTrace())); // Use FrameworkLogger for consistency
+        failedCount++;
+        String err = result.getThrowable() != null ? result.getThrowable().toString() : null;
+        logResult(
+                ExecutionContext.getRunId(),
+                TestRunContext.getIterationId(),
+                ExecutionContext.getServiceName(),
+                result.getMethod().getMethodName(),
+                "Fail",
+                FrameworkConstants.getBranchName(),
+                TestMetrics.getResponseTimeMs(),
+                TestMetrics.getHttpStatusCode(),
+                ExecutionContext.getBuildVersion(),
+                ExecutionContext.getTriggeredBy(),
+                err,
+                LocalDateTime.now()
+        );
+        ExtentLogger.fail(result.getThrowable() != null ? result.getThrowable().getMessage() : "Test failed");
+        if (result.getThrowable() != null) {
+            ExtentLogger.fail(result.getThrowable().toString());
+        }
+        log(DEBUG, Arrays.toString(result.getThrowable() != null ? result.getThrowable().getStackTrace() : new StackTraceElement[]{}));
+        log(ERROR, result.getMethod().getMethodName() + " is failed !!");
         log(INFO, "------------------------------------------------------------");
+        // Do not clear TestRunContext here; a retry may follow and needs the iterationId preserved
+        TestMetrics.clear();
     }
 
     /**
-     * Logs the test as "SKIP" in the ExtentReport and stores the result in the database.
+     * Marks the test as skip and logs it in the report.
      *
-     * @param result The result of the skipped test method.
-     * @see ExtentLogger#skip(String)
-     * @see org.op_ra.utils.ReportDatabaseController#storeReportInDatabase(String, String)
+     * @see org.op_ra.reports.ExtentLogger
      */
+
     @Override
     public void onTestSkipped(ITestResult result) {
-        storeReportInDatabase(result.getMethod().getMethodName(), "Skip");
-        ExtentLogger.skip("<span style='font-weight:bold;color:orange;'>SKIPPED: </span>" + result.getMethod().getMethodName());
-        if (result.getThrowable() != null) {
-            ExtentLogger.skip("Skip Reason: " + result.getThrowable().getMessage());
-            log(INFO, result.getMethod().getMethodName() + " is SKIPPED due to: " + result.getThrowable().getMessage());
-        } else {
-            log(INFO, result.getMethod().getMethodName() + " is SKIPPED.");
-        }
+        skippedCount++;
+        logResult(
+                ExecutionContext.getRunId(),
+                TestRunContext.getIterationId(),
+                ExecutionContext.getServiceName(),
+                result.getMethod().getMethodName(),
+                "Skip",
+                FrameworkConstants.getBranchName(),
+                TestMetrics.getResponseTimeMs(),
+                TestMetrics.getHttpStatusCode(),
+                ExecutionContext.getBuildVersion(),
+                ExecutionContext.getTriggeredBy(),
+                null,
+                LocalDateTime.now()
+        );
+        ExtentLogger.skip(result.getMethod().getMethodName() + " is skipped !!");
+        log(INFO, result.getMethod().getMethodName() + " is skipped !!");
         log(INFO, "------------------------------------------------------------");
+        TestRunContext.clear();
+        TestMetrics.clear();
+    }
+
+    /**
+     * Format duration from milliseconds to HH:MM:SS format
+     */
+    private String formatDuration(long durationMillis) {
+        long seconds = durationMillis / 1000;
+        long hours = seconds / 3600;
+        long minutes = (seconds % 3600) / 60;
+        seconds = seconds % 60;
+        return String.format("%02d:%02d:%02d", hours, minutes, seconds);
     }
 }

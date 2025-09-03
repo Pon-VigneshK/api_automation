@@ -2,59 +2,39 @@ package org.op_ra.reports;
 
 import com.aventstack.extentreports.ExtentTest;
 
-/**
- * Manages {@link ExtentTest} instances for thread-safe reporting in ExtentReports.
- * This class uses a {@link ThreadLocal} variable to store the {@link ExtentTest} object,
- * ensuring that each thread has its own instance of the test report. This is crucial
- * when running tests in parallel to prevent logs from different tests being mixed up.
- * <p>
- * Methods are provided to set, get, and unload the {@link ExtentTest} instance for the current thread.
- * </p>
- * @see ExtentReport
- * @see ExtentLogger
- */
 public final class ExtentManager {
-
-    /**
-     * Private constructor to prevent instantiation of this utility class.
-     */
-    private ExtentManager() {
-        // Private constructor
-    }
-
-    // ThreadLocal variable to store ExtentTest instance per thread
     private static final ThreadLocal<ExtentTest> extentTestThreadLocal = new ThreadLocal<>();
 
     /**
-     * Returns the {@link ExtentTest} instance for the current thread.
-     * This allows logging methods (e.g., in {@link ExtentLogger}) to access the correct
-     * test report object associated with the currently executing test.
-     *
-     * @return The {@link ExtentTest} instance for the current thread.
-     *         Returns {@code null} if no test has been set for the current thread.
+     * The ExtentManager class helps achieve thread safety for the {@link com.aventstack.extentreports.ExtentTest} instance.
      */
-    static ExtentTest getExtentTest() { // Package-private access, used by ExtentReport and ExtentLogger
+    private ExtentManager() {
+
+    }
+
+    /**
+     * Returns the thread-safe {@link com.aventstack.extentreports.ExtentTest} instance fetched from the ThreadLocal variable.
+     *
+     * @return Thread-safe {@link com.aventstack.extentreports.ExtentTest} instance.
+     */
+    static ExtentTest getExtentTest() {
         return extentTestThreadLocal.get();
     }
 
     /**
-     * Sets the {@link ExtentTest} instance for the current thread.
-     * This is typically called when a new test starts (e.g., in a TestNG listener like {@link org.op_ra.listeners.ListenerClass#onTestStart}).
+     * Sets the {@link com.aventstack.extentreports.ExtentTest} instance to the thread-local variable.
      *
-     * @param test The {@link ExtentTest} object to be associated with the current thread.
-     *             This object is usually created by {@link com.aventstack.extentreports.ExtentReports#createTest(String)}.
+     * @param test {@link com.aventstack.extentreports.ExtentTest} instance that needs to be saved from thread safety issues.<p>
      */
-    static void setExtentTest(ExtentTest test) { // Package-private access
+    static void setExtentTest(ExtentTest test) {
         extentTestThreadLocal.set(test);
     }
 
     /**
-     * Removes the {@link ExtentTest} instance from the current thread'''s ThreadLocal storage.
-     * This should be called after a test has finished (e.g., in a TestNG listener like {@link org.op_ra.listeners.ListenerClass#onFinish(org.testng.ISuite)})
-     * to prevent memory leaks and ensure a clean state for subsequent tests on the same thread
-     * (if threads are reused by the test runner).
+     * Calling the remove method on the ThreadLocal variable ensures setting the default value for the ThreadLocal variable.
+     * It is much safer than assigning a null value to the ThreadLocal variable.
      */
-    static void unloadExtentTest() { // Package-private access
+    static void unloadExtentTest() {
         extentTestThreadLocal.remove();
     }
 }

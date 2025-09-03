@@ -1,0 +1,12 @@
+{
+  "name" : "Main Office",
+  "address" : "1111 WILLOW TREE ROAD",
+  "address2" : "Second Address",
+  "city" : "Horsham",
+  "state" : "PA",
+  "zip" : "19034",
+  "localId": "1355",
+  "practiceId" : 229,
+  "organizationId" : 1,
+  "phones" : [ ]
+}

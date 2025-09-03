@@ -1,85 +1,84 @@
 package org.op_ra.utils;
 
+import org.op_ra.enums.ConfigProperties;
+import org.op_ra.enums.LogType;
+import org.op_ra.reports.FrameworkLogger;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.Types;
+import java.time.LocalDateTime;
 import java.sql.Timestamp;
-import java.util.Date;
 
-/**
- * Controls interactions with a database for storing test report summaries or results.
- * This class provides methods to insert test case outcomes (e.g., method name, status, execution time)
- * into a predefined database table.
- * <p>
- * It relies on {@link DataBaseConnectionUtils} to obtain a database connection.
- * </p>
- * The database table structure is assumed to include columns for:
- * - test_method_name (String)
- * - test_status (String - e.g., "PASS", "FAIL", "SKIP")
- * - execution_timestamp (Timestamp)
- * - (Optionally) execution_duration_ms (Long), suite_name (String), etc.
- */
-public final class ReportDatabaseController {
+import static org.op_ra.constants.FrameworkConstants.getBranchName;
+
+public class ReportDatabaseController {
 
     /**
-     * Private constructor to prevent instantiation of this utility class.
+     * Private constructor to prevent instantiation of the ReportDatabaseController class.
      */
     private ReportDatabaseController() {
-        // Private constructor
     }
 
-    /**
-     * Stores the result of a test case into the reporting database.
-     *
-     * @param testMethodName The name of the test method (e.g., from {@code ITestResult.getMethod().getMethodName()}).
-     * @param testStatus     The status of the test (e.g., "Pass", "Fail", "Skip").
-     *                       Consider using an enum for status for consistency.
-     */
-    public static void storeReportInDatabase(String testMethodName, String testStatus) {
-        // Example SQL INSERT statement. Adjust table and column names as per your database schema.
-        String sql = "INSERT INTO test_execution_reports (test_method_name, test_status, execution_timestamp) VALUES (?, ?, ?)";
-        Connection conn = null;
-        PreparedStatement pstmt = null;
+    public static void logResult(String runId,
+                                 int iterationId,
+                                 String serviceName,
+                                 String scriptName,
+                                 String status,
+                                 String environment,
+                                 Long responseTimeMs,
+                                 Integer httpStatusCode,
+                                 String buildVersion,
+                                 String triggeredBy,
+                                 String errorMessage,
+                                 LocalDateTime executionTime) {
 
-        try {
-            conn = DataBaseConnectionUtils.getMyConn();
-            if (conn == null || conn.isClosed()) {
-                System.err.println("ReportDatabaseController: Cannot store report, database connection is null or closed.");
-                return;
-            }
+        if (!"true".equalsIgnoreCase(PropertyUtils.getValue(ConfigProperties.AUDITLOGDB))) {
+            return;
+        }
 
-            pstmt = conn.prepareStatement(sql);
-            pstmt.setString(1, testMethodName);
-            pstmt.setString(2, testStatus);
-            pstmt.setTimestamp(3, new Timestamp(new Date().getTime())); // Current timestamp
+        String insertQuery = "INSERT INTO `automation_execution_logs`.`qe_atlas_practice_execution_log` " +
+                "(`runId`, `iterationId`, `serviceName`, `testCaseName`, `status`, `environment`, " +
+                "`executionTime`, `responseTimeMs`, `httpStatusCode`, `buildVersion`, `triggeredBy`, `errorMessage`) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
-            int affectedRows = pstmt.executeUpdate();
-            if (affectedRows > 0) {
-                System.out.println("ReportDatabaseController: Test result for '" + testMethodName + "' stored successfully in database.");
-                // FrameworkLogger.log(LogType.INFO, "Test result for '" + testMethodName + "' stored in DB.");
-            } else {
-                System.err.println("ReportDatabaseController: Failed to store test result for '" + testMethodName + "' in database (0 rows affected).");
-                // FrameworkLogger.log(LogType.WARN, "Failed to store test result for '" + testMethodName + "' in DB.");
-            }
+        try (Connection connection = DataBaseConnectionUtils.getCloudConn();
+             PreparedStatement statement = connection.prepareStatement(insertQuery)) {
+
+            int idx = 1;
+            statement.setString(idx++, runId);
+            statement.setInt(idx++, iterationId);
+            statement.setString(idx++, serviceName);
+            statement.setString(idx++, scriptName);
+            statement.setString(idx++, status);
+
+            // environment from parameter, falling back to branchName if blank
+            String envToLog = (environment == null || environment.isBlank()) ? getBranchName() : environment;
+            statement.setString(idx++, envToLog);
+
+            // execution time (proper timestamp)
+            statement.setTimestamp(idx++, executionTime != null ? Timestamp.valueOf(executionTime) : Timestamp.valueOf(LocalDateTime.now()));
+
+            // response time
+            if (responseTimeMs != null) statement.setLong(idx++, responseTimeMs);
+            else statement.setNull(idx++, Types.BIGINT);
+
+            // http status
+            if (httpStatusCode != null) statement.setInt(idx++, httpStatusCode);
+            else statement.setNull(idx++, Types.INTEGER);
+
+            // buildVersion, triggeredBy, errorMessage with null safety
+            statement.setString(idx++, buildVersion != null ? buildVersion : "");
+            statement.setString(idx++, triggeredBy != null ? triggeredBy : "");
+            statement.setString(idx++, errorMessage != null ? errorMessage : "");
+
+            FrameworkLogger.log(LogType.INFO, "Executing DB insert: " + statement);
+
+            statement.executeUpdate();
 
         } catch (SQLException e) {
-            System.err.println("ReportDatabaseController: SQL Exception while storing test report for '" + testMethodName + "': " + e.getMessage());
-            // FrameworkLogger.log(LogType.ERROR, "SQL Exception storing report for '" + testMethodName + "': " + e.getMessage());
-            // Consider whether to throw a runtime exception or just log the error.
-            // throw new RuntimeException("Failed to store test report in database for " + testMethodName, e);
-        } finally {
-            try {
-                if (pstmt != null) pstmt.close();
-                // Connection is typically managed by DataBaseConnectionUtils.
-                // If not, close it here: DataBaseConnectionUtils.closeConnection();
-            } catch (SQLException e) {
-                System.err.println("ReportDatabaseController: SQL Exception while closing PreparedStatement: " + e.getMessage());
-            }
+            FrameworkLogger.log(LogType.WARN, "Could not store enriched test result in database: " + e.getMessage());
         }
     }
-
-    // You might add other methods, for example:
-    // - To create the reports table if it doesn'''t exist.
-    // - To fetch aggregated report data from the database.
-    // - To clean up old report data.
 }

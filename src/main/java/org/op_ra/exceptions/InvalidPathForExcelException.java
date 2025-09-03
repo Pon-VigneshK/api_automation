@@ -1,26 +1,27 @@
 package org.op_ra.exceptions;
 
+import org.op_ra.constants.FrameworkConstants;
+
 /**
- * Custom exception to indicate that an invalid or incorrect path has been specified for an Excel file.
- * This exception is typically thrown when the framework attempts to access an Excel file
- * (e.g., for test data or runner lists) at a path that does not exist or is not accessible.
+ * Runtime Exception occurs when the path given for excel sheet is incorrect.
+ *
+ * @see FrameworkConstants
  */
-public class InvalidPathForExcelException extends FrameworkException {
+@SuppressWarnings("serial")
+public class InvalidPathForExcelException extends InvalidPathForFilesException {
 
     /**
-     * Constructs a new InvalidPathForExcelException with the specified detail message.
+     * Pass the message that needs to be appended to the stacktrace
      *
-     * @param message the detail message.
+     * @param message Details about the exception or custom message
      */
     public InvalidPathForExcelException(String message) {
         super(message);
     }
 
     /**
-     * Constructs a new InvalidPathForExcelException with the specified detail message and cause.
-     *
-     * @param message the detail message.
-     * @param cause   the cause of the exception.
+     * @param message Details about the exception or custom message
+     * @param cause   Pass the enriched stacktrace or customised stacktrace
      */
     public InvalidPathForExcelException(String message, Throwable cause) {
         super(message, cause);
