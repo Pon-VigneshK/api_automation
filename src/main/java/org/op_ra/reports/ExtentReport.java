@@ -16,17 +16,46 @@ import static org.op_ra.constants.FrameworkConstants.getServiceName;
 import static org.op_ra.enums.LogType.INFO;
 import static org.op_ra.reports.FrameworkLogger.log;
 
+/**
+ * {@code ExtentReport} is a final class that provides methods for initializing and managing
+ * the ExtentReports instance. This class is responsible for setting up the report configuration,
+ * creating test entries, and flushing the report at the end of the test suite.
+ *
+ * <p>This class is designed to be used statically and should not be instantiated.</p>
+ *
+ * <p><b>Usage:</b></p>
+ * <p>The methods in this class are called by the {@link org.op_ra.listeners.ListenerClass}
+ * to manage the lifecycle of the Extent Report.</p>
+ *
+ * <pre>{@code
+ * // Initializing the report at the start of the suite
+ * ExtentReport.initReports("MyTestSuite");
+ *
+ * // Creating a test entry at the start of a test
+ * ExtentReport.createTest("MyTestCase");
+ *
+ * // Flushing the report at the end of the suite
+ * ExtentReport.flushReports();
+ * }</pre>
+ *
+ * @see ExtentReports
+ * @see ExtentSparkReporter
+ * @see ExtentManager
+ * @version 1.0
+ * @since 2023-10-27
+ */
 public final class ExtentReport {
     private static ExtentReports extentReports;
 
     private ExtentReport() {
-
     }
 
     /**
-     * Sets the initial configuration for the Extent Reports and determines the report generation path.
+     * Initializes the ExtentReports instance with the specified configuration. It sets up the
+     * path for the report, configures the theme, and attaches the spark reporter. It also
+     * creates a separate report for failed tests.
      *
-     * @param classname Parameterized from the listener class.
+     * @param classname The name of the class or suite for which the report is being generated.
      */
     public static void initReports(String classname) {
         if (Objects.isNull(extentReports)) {
@@ -48,39 +77,47 @@ public final class ExtentReport {
     }
 
     /**
-     * Flushing the reports ensures that extent logs are reflected properly.
-     * Opens the report in the default desktop browser.
-     * Sets the ThreadLocal variable to the default value.
+     * Flushes the ExtentReports instance, which writes all the logs to the report file.
+     * It also unloads the {@link ExtentManager} to clean up the thread-local variable.
+     *
+     * @throws IOException If there is an error while browsing the report file.
      */
     public static void flushReports() throws IOException {
         if (Objects.nonNull(extentReports)) {
             extentReports.flush();
         }
         ExtentManager.unloadExtentTest();
-        //Desktop.getDesktop().browse(new File(getReportPath()).toURI());
     }
 
     /**
-     * Creates a test node in the Extent report. Delegates to {@link ExtentManager} for providing thread safety.
+     * Creates a new test entry in the Extent Report with the given test case name.
+     * It uses {@link ExtentManager} to ensure thread safety.
      *
-     * @param testcasename Test Name that needs to be reflected in the report.
+     * @param testcasename The name of the test case to be created in the report.
      */
     public static void createTest(String testcasename) {
         ExtentManager.setExtentTest(extentReports.createTest(testcasename));
     }
 
+    /**
+     * Adds the specified authors to the current test in the Extent Report.
+     *
+     * @param authors An array of author names to be added to the test.
+     */
     public static void addAuthors(String[] authors) {
         for (String temp : authors) {
             ExtentManager.getExtentTest().assignAuthor(temp);
         }
     }
 
+    /**
+     * Adds the specified categories to the current test in the Extent Report.
+     *
+     * @param categories An array of {@link CategoryType} enums to be added to the test.
+     */
     public static void addCategories(CategoryType[] categories) {
-
         for (CategoryType temp : categories) {
-            ExtentManager.getExtentTest().assignAuthor(temp.toString());
+            ExtentManager.getExtentTest().assignCategory(temp.toString());
         }
-
     }
-
 }

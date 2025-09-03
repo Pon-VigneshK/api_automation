@@ -11,7 +11,12 @@ import org.op_ra.exceptions.JsonExceptions;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -20,6 +25,31 @@ import static org.op_ra.enums.LogType.ERROR;
 import static org.op_ra.enums.LogType.INFO;
 import static org.op_ra.reports.FrameworkLogger.log;
 
+/**
+ * {@code DataBaseConnectionUtils} is a final class that provides utility methods for managing
+ * database connections. It supports connecting to both MySQL and SQLite databases based on the
+ * run mode specified in the configuration.
+ *
+ * <p>This class handles the initialization of the database connection and provides methods for
+ * retrieving the connection, closing it, and executing queries.</p>
+ *
+ * <p><b>Usage:</b></p>
+ * <p>The methods in this class are static and can be called directly to interact with the database.</p>
+ *
+ * <pre>{@code
+ * // Getting a database connection
+ * Connection conn = DataBaseConnectionUtils.getMyConn();
+ *
+ * // Executing a query
+ * Map<String, String> result = DataBaseConnectionUtils.retrieveRowData("SELECT * FROM users WHERE id = 1");
+ *
+ * // Closing the connection
+ * DataBaseConnectionUtils.closeConnection();
+ * }</pre>
+ *
+ * @version 1.0
+ * @since 2023-10-27
+ */
 public final class DataBaseConnectionUtils {
 
     private static Map<String, String> CONFIGMAP;
@@ -37,6 +67,13 @@ public final class DataBaseConnectionUtils {
         }
     }
 
+    /**
+     * Retrieves a value from the cloud database configuration map.
+     *
+     * @param key The key to retrieve from the configuration.
+     * @return The value associated with the specified key.
+     * @throws JsonExceptions if the key is null or not found in the configuration.
+     */
     public static String get(CloudDataBaseProperties key) throws JsonExceptions {
         if (Objects.isNull(key)) {
             throw new JsonExceptions("Key is null. Please provide a valid key.");
@@ -82,7 +119,6 @@ public final class DataBaseConnectionUtils {
         String hostName = get(CloudDataBaseProperties.HOSTNAME);
         String port = get(CloudDataBaseProperties.PORT);
         String schema = get(CloudDataBaseProperties.SCHEMA);
-        // Get the Base64 encoded values from config and decode them
         String encodedUsername = get(CloudDataBaseProperties.DBUSERNAME);
         String encodedPassword = get(CloudDataBaseProperties.DBPASSWORD);
         String dbusername = StringDecoder.decodeBase64UTF8(encodedUsername);
@@ -115,6 +151,11 @@ public final class DataBaseConnectionUtils {
         return myConn;
     }
 
+    /**
+     * Returns the current database connection. If the connection is null or closed, it initializes a new one.
+     *
+     * @return The active database connection.
+     */
     public static Connection getMyConn() {
         try {
             if (myConn == null || myConn.isClosed()) {
@@ -128,6 +169,11 @@ public final class DataBaseConnectionUtils {
         return myConn;
     }
 
+    /**
+     * Returns the cloud database connection. If the connection is null or closed, it establishes a new one.
+     *
+     * @return The active cloud database connection.
+     */
     public static Connection getCloudConn() {
         try {
             if (myConn == null || myConn.isClosed()) {
@@ -141,6 +187,9 @@ public final class DataBaseConnectionUtils {
         return myConn;
     }
 
+    /**
+     * Closes the current database connection if it is open.
+     */
     public static void closeConnection() {
         if (myConn != null) {
             try {
@@ -153,6 +202,12 @@ public final class DataBaseConnectionUtils {
         }
     }
 
+    /**
+     * Executes a SQL query and returns the first row of the result set as a map.
+     *
+     * @param query The SQL query to execute.
+     * @return A map representing the first row of the result set, where the keys are column names.
+     */
     public static Map<String, String> retrieveRowData(String query) {
         Map<String, String> row = new HashMap<>();
         try (Connection connection = connectToMySQL();
@@ -173,6 +228,12 @@ public final class DataBaseConnectionUtils {
         return row;
     }
 
+    /**
+     * Executes a SQL query on a SQLite database and returns the first row of the result set as a map.
+     *
+     * @param query The SQL query to execute.
+     * @return A map representing the first row of the result set, where the keys are column names.
+     */
     public static Map<String, String> retrieveRowDataSqLite(String query) {
         Map<String, String> row = new HashMap<>();
         try (Connection connection = connectToSQLite();

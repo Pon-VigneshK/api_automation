@@ -15,9 +15,19 @@ import java.util.Map;
 import static org.op_ra.enums.ConfigProperties.ORGANIZATIONIDHEADER;
 import static org.op_ra.utils.PropertyUtils.getValue;
 
+/**
+ * This class contains tests for the Appointment Type Controller of the Atlas Practice Service.
+ * It includes tests for reading appointment types.
+ *
+ * @version 1.0
+ * @since 2023-10-27
+ */
 public class TestAppointmentTypeController {
     Map<String, String> data = new HashMap<>();
 
+    /**
+     * This test verifies reading an appointment type by its ID.
+     */
     @FrameworkAnnotation(author = {"Vicky"}, category = {CategoryType.SMOKE, CategoryType.HIGH_LEVEL_TESTING, CategoryType.FULL_REGRESSION})
     @Test(groups = {"appointmentTypeController", "smoke", "highLevel", "fullRegression", "readAPICall"})
     public void TC001_GET_Read_AppointmentTypeById() {
@@ -26,6 +36,9 @@ public class TestAppointmentTypeController {
         Assertions.assertThat(ApiActions.verifyJsonKeyValues(RequestBuilder.requestGetCall(fullEndpoint), Map.of("id", data.get("id"), "name", data.get("name"), "localId", data.get("local_id"), "organizationId", getValue(ORGANIZATIONIDHEADER)))).isEqualTo(true);
     }
 
+    /**
+     * This test verifies reading an appointment type by its local ID.
+     */
     @FrameworkAnnotation(author = {"Vicky"}, category = {CategoryType.SMOKE, CategoryType.HIGH_LEVEL_TESTING, CategoryType.FULL_REGRESSION})
     @Test(groups = {"appointmentTypeController", "smoke", "highLevel", "fullRegression", "readAPICall"})
     public void TC002_GET_Read_AppointmentTypeByLocalId() {
@@ -35,6 +48,9 @@ public class TestAppointmentTypeController {
 
     }
 
+    /**
+     * This test verifies reading appointment types with pagination.
+     */
     @FrameworkAnnotation(author = {"Vicky"}, category = {CategoryType.HIGH_LEVEL_TESTING, CategoryType.FULL_REGRESSION})
     @Test(groups = {"appointmentTypeController", "highLevel", "fullRegression", "readAPICall"})
     public void TC003_GET_Read_AppointmentTypesWithPagination() {
@@ -45,7 +61,9 @@ public class TestAppointmentTypeController {
         Assertions.assertThat((Object) response.jsonPath().get("totalElements")).isNotNull();
     }
 
-
+    /**
+     * This test verifies the advanced search for appointment types.
+     */
     @FrameworkAnnotation(author = {"Vicky"}, category = {CategoryType.HIGH_LEVEL_TESTING, CategoryType.FULL_REGRESSION})
     @Test(groups = {"appointmentTypeController", "highLevel", "fullRegression", "readAPICall"})
     public void TC004_GET_Read_AppointmentTypeAdvancedSearch() {
@@ -54,5 +72,4 @@ public class TestAppointmentTypeController {
         Assertions.assertThat(ApiActions.verifyJsonKeyValues(RequestBuilder.requestGetCall(fullEndpoint), Map.of("id", data.get("id"), "name", data.get("name"), "localId", data.get("local_id"), "organizationId", getValue(ORGANIZATIONIDHEADER)))).isEqualTo(true);
 
     }
-
 }

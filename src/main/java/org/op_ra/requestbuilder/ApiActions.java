@@ -17,8 +17,40 @@ import static org.op_ra.constants.FrameworkConstants.getMaxLimit;
 import static org.op_ra.enums.LogType.INFO;
 import static org.op_ra.reports.FrameworkLogger.log;
 
+/**
+ * {@code ApiActions} is a utility class that provides methods for performing common API actions and verifications.
+ * This class includes methods for searching for values in a JSON response, verifying key-value pairs,
+ * forming endpoints, and checking response status codes and body content.
+ *
+ * <p>This class is designed to be used statically and should not be instantiated.</p>
+ *
+ * <p><b>Usage:</b></p>
+ * <p>The methods in this class can be called to perform verifications on a {@link Response} object or to
+ * construct an endpoint URL.</p>
+ *
+ * <pre>{@code
+ * // Verifying key-value pairs in a response
+ * Map<String, Object> expectedValues = new HashMap<>();
+ * expectedValues.put("name", "John Doe");
+ * boolean isVerified = ApiActions.verifyJsonKeyValues(response, expectedValues);
+ *
+ * // Forming an endpoint URL
+ * String endpoint = ApiActions.formEndpoint("/users/%s", "123");
+ * }</pre>
+ *
+ * @version 1.0
+ * @since 2023-10-27
+ */
 public class ApiActions {
 
+    /**
+     * Searches for a specific key-value pair in a JSON string.
+     *
+     * @param targetKey The key to search for.
+     * @param expectedValue The expected value of the key.
+     * @param jsonStr The JSON string to search in.
+     * @return {@code true} if the key-value pair is found, {@code false} otherwise.
+     */
     public static boolean findValues(String targetKey, String expectedValue, String jsonStr) {
         log(LogType.INFO, String.format("Searching for key: '%s' with expected value: '%s'", targetKey, expectedValue));
         try {
@@ -54,6 +86,14 @@ public class ApiActions {
         }
     }
 
+    /**
+     * Verifies that the JSON response contains the expected key-value pairs. It also checks that the
+     * status code is 200 and the response time is within the acceptable limit.
+     *
+     * @param response The REST Assured response object.
+     * @param expectedValues A map of expected key-value pairs.
+     * @return {@code true} if all verifications pass, {@code false} otherwise.
+     */
     public static boolean verifyJsonKeyValues(Response response, Map<String, Object> expectedValues) {
         boolean verification = true;
         response.then().statusCode(200);
@@ -84,6 +124,14 @@ public class ApiActions {
         return verification;
     }
 
+    /**
+     * Constructs the full endpoint URL by combining the base URL from the properties file with the
+     * given endpoint and parameters.
+     *
+     * @param endpoint The endpoint path with format specifiers.
+     * @param params The parameters to be formatted into the endpoint path.
+     * @return The full endpoint URL.
+     */
     public static String formEndpoint(String endpoint, String... params) {
         try {
             ExtentLogger.log("User authenticated successfully via OAuth2 with client ID: " + PropertyUtils.getValue(ConfigProperties.CLIENTID));
@@ -95,6 +143,14 @@ public class ApiActions {
         ExtentLogger.log("Requesting endpoint from Atlas Practice Service: " + fullEndpoint);
         return fullEndpoint;
     }
+
+    /**
+     * Checks if the response body is empty. It also verifies that the status code is 200 and the
+     * response time is within the acceptable limit.
+     *
+     * @param response The REST Assured response object.
+     * @return {@code true} if the response body is empty, {@code false} otherwise.
+     */
     public static boolean isResponseBodyEmpty(Response response) {
         response.then().statusCode(200);
         response.then().time(lessThan(getMaxLimit()));
@@ -112,6 +168,14 @@ public class ApiActions {
 
         return result;
     }
+
+    /**
+     * Checks if the status code of the response is equal to the expected status code.
+     *
+     * @param response The REST Assured response object.
+     * @param expectedStatusCode The expected status code.
+     * @return {@code true} if the status codes match, {@code false} otherwise.
+     */
     public static boolean isStatusCodeEqualTo(Response response, int expectedStatusCode) {
         int actualStatusCode = response.getStatusCode();
 
@@ -127,7 +191,4 @@ public class ApiActions {
 
         return result;
     }
-
-
-
 }

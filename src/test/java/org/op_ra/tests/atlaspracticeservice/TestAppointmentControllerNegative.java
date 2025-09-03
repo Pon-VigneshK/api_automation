@@ -16,10 +16,20 @@ import java.util.Map;
 import static org.op_ra.enums.ConfigProperties.ORGANIZATIONIDHEADER;
 import static org.op_ra.utils.PropertyUtils.getValue;
 
+/**
+ * This class contains negative tests for the Appointment Controller of the Atlas Practice Service.
+ * It includes tests for invalid authentication, invalid headers, and invalid data.
+ *
+ * @version 1.0
+ * @since 2023-10-27
+ */
 public class TestAppointmentControllerNegative {
 
     Map<String, String> data = new HashMap<>();
 
+    /**
+     * This test verifies that a 401 Unauthorized status is returned when getting appointments with an invalid access token.
+     */
     @FrameworkAnnotation(author = {"Vicky"}, category = {CategoryType.FULL_REGRESSION})
     @Test(groups = {"appointmentController", "fullRegression"})
     public void TC001_GET_InvalidAccessToken_GetAppointments() {
@@ -28,6 +38,9 @@ public class TestAppointmentControllerNegative {
         Assertions.assertThat(RequestBuilder.requestGetCallUsingInvalidToken(fullEndpoint)).isEqualTo(true);
     }
 
+    /**
+     * This test verifies that a 401 Unauthorized status is returned when creating an appointment with an invalid access token.
+     */
     @FrameworkAnnotation(author = {"Vicky"}, category = {CategoryType.FULL_REGRESSION})
     @Test(groups = {"appointmentController", "fullRegression"})
     public void TC002_POST_InvalidAccessToken_CreateAppointment() {
@@ -36,6 +49,9 @@ public class TestAppointmentControllerNegative {
         Assertions.assertThat(RequestBuilder.requestPostCallUsingInvalidToken(fullEndpoint, validBody)).isEqualTo(true);
     }
 
+    /**
+     * This test verifies that a 401 Unauthorized status is returned when getting appointments by location without authentication.
+     */
     @FrameworkAnnotation(author = {"Vicky"}, category = {CategoryType.FULL_REGRESSION})
     @Test(groups = {"appointmentController", "fullRegression"})
     public void TC003_GET_NoAuthentication_GetAppointmentsByLocation() {
@@ -43,6 +59,9 @@ public class TestAppointmentControllerNegative {
         Assertions.assertThat(RequestBuilder.requestGetCallWithoutAuth(fullEndpoint)).isEqualTo(true);
     }
 
+    /**
+     * This test verifies that a 500 Internal Server Error status is returned when getting appointments with an invalid organization header.
+     */
     @FrameworkAnnotation(author = {"Vicky"}, category = {CategoryType.FULL_REGRESSION})
     @Test(groups = {"appointmentController", "fullRegression"})
     public void TC004_GET_InvalidOrganizationHeader_GetAppointments() {
@@ -51,6 +70,9 @@ public class TestAppointmentControllerNegative {
         Assertions.assertThat(ApiActions.isStatusCodeEqualTo(RequestBuilder.requestGetCallUsingInvalidHeader(fullEndpoint), 500)).isEqualTo(true);
     }
 
+    /**
+     * This test verifies that a 500 Internal Server Error status is returned when creating an appointment with a missing organization header.
+     */
     @FrameworkAnnotation(author = {"Vicky"}, category = {CategoryType.FULL_REGRESSION})
     @Test(groups = {"appointmentController", "fullRegression"})
     public void TC005_POST_MissingOrganizationHeader_CreateAppointment() {
@@ -59,6 +81,9 @@ public class TestAppointmentControllerNegative {
         Assertions.assertThat(ApiActions.isStatusCodeEqualTo(RequestBuilder.requestPostCallUsingInvalidHeader(fullEndpoint, validBody), 500)).isEqualTo(true);
     }
 
+    /**
+     * This test verifies that a 404 Not Found status is returned when getting an appointment from a non-existent endpoint.
+     */
     @FrameworkAnnotation(author = {"Vicky"}, category = {CategoryType.FULL_REGRESSION})
     @Test(groups = {"appointmentController", "fullRegression"})
     public void TC006_GET_InvalidAppoitnment_Path_NonExistentEndpoint() {
@@ -66,6 +91,9 @@ public class TestAppointmentControllerNegative {
         Assertions.assertThat(RequestBuilder.requestGetCallInvalidPath(fullEndpoint)).isEqualTo(true);
     }
 
+    /**
+     * This test verifies that a 400 Bad Request status is returned when getting appointments with a location ID containing special characters.
+     */
     @FrameworkAnnotation(author = {"Vicky"}, category = {CategoryType.FULL_REGRESSION})
     @Test(groups = {"appointmentController", "fullRegression"})
     public void TC007_GET_AppointmentInvalidLocationId_SpecialCharacters() {
@@ -73,6 +101,9 @@ public class TestAppointmentControllerNegative {
         Assertions.assertThat(RequestBuilder.requestInvalidReadGetCallByString(fullEndpoint)).isEqualTo(true);
     }
 
+    /**
+     * This test verifies that an empty response is returned when getting appointments with a negative location ID.
+     */
     @FrameworkAnnotation(author = {"Vicky"}, category = {CategoryType.FULL_REGRESSION})
     @Test(groups = {"appointmentController", "fullRegression"})
     public void TC008_GET_InvalidLocationId_NegativeValue() {

@@ -6,7 +6,12 @@ import org.op_ra.enums.ConfigProperties;
 import javax.activation.DataHandler;
 import javax.activation.DataSource;
 import javax.activation.FileDataSource;
-import javax.mail.*;
+import javax.mail.Message;
+import javax.mail.MessagingException;
+import javax.mail.Multipart;
+import javax.mail.PasswordAuthentication;
+import javax.mail.Session;
+import javax.mail.Transport;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
@@ -23,26 +28,40 @@ import static org.op_ra.enums.EmailProperties.EMAILPASSWORD;
 import static org.op_ra.enums.EmailProperties.FROMEMAIL;
 import static org.op_ra.utils.EmailPropertyUtils.getValue;
 
-
+/**
+ * {@code SendEmailWithResults} is a class that provides a method for sending an email with the
+ * test execution results. This class is responsible for constructing the email body, attaching
+ * the test report, and sending the email to the configured recipients.
+ *
+ * <p><b>Usage:</b></p>
+ * <p>The {@code sendEmail} method can be called to send an email with the test summary.</p>
+ *
+ * <pre>{@code
+ * SendEmailWithResults.sendEmail(10, 2, 1, "00:15:30");
+ * }</pre>
+ *
+ * @version 1.0
+ * @since 2023-10-27
+ */
 public class SendEmailWithResults {
 
+    /**
+     * Sends an email with the test execution summary and attaches the test report.
+     *
+     * @param passedCount The number of passed tests.
+     * @param failedCount The number of failed tests.
+     * @param skippedCount The number of skipped tests.
+     * @param executionDuration The total execution duration of the test suite.
+     */
     public static void sendEmail(int passedCount, int failedCount, int skippedCount, String executionDuration) {
         Map<String, String> data = new HashMap<>();
         String body;
         LocalTime currentTime = LocalTime.now();
         LocalDate currentDate = LocalDate.now();
-        LocalTime morningEnd = LocalTime.of(12, 0);
         DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         String formattedDate = currentDate.format(dateFormatter);
         DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("hh:mm a");
         String formattedTime = currentTime.format(timeFormatter);
-        String greeting;
-        if (currentTime.isBefore(morningEnd)) {
-            greeting = "Good Morning";
-        } else {
-            greeting = "Good Afternoon";
-        }
-
 
         String subject = "";
         String environment = "";
@@ -78,16 +97,13 @@ public class SendEmailWithResults {
         if (data.get("email_enabled").equalsIgnoreCase("yes") && environment != null) {
             String attachmentPath = FrameworkConstants.getReportPath();
 
-            // Get CI environment variables
             String branchName = System.getenv("CI_COMMIT_REF_NAME");
             String repoName = System.getenv("CI_PROJECT_NAME");
             String pipelineId = System.getenv("CI_PIPELINE_ID");
             String pipelineUrl = System.getenv("CI_PIPELINE_URL");
 
-            // Calculate total tests
             int totalTests = passedCount + failedCount + skippedCount;
 
-            // Determine execution environment based on branch
             String executionEnvironment = "";
             switch (environment) {
                 case "main":
@@ -154,7 +170,6 @@ public class SendEmailWithResults {
             String host = "smtp.gmail.com";
             String password = getValue(EMAILPASSWORD);
 
-
             String to = data.get("email_address");
 
             Properties properties = System.getProperties();
@@ -187,7 +202,6 @@ public class SendEmailWithResults {
                 Multipart multipart = new MimeMultipart();
                 multipart.addBodyPart(messageBodyPart);
 
-                // Attach the report file
                 messageBodyPart = new MimeBodyPart();
                 DataSource source = new FileDataSource(attachmentPath);
                 messageBodyPart.setDataHandler(new DataHandler(source));
@@ -202,22 +216,23 @@ public class SendEmailWithResults {
                 mex.printStackTrace();
             }
         }
-
     }
 
     /**
-     * Backward compatibility method - calls the main sendEmail method with default counts
+     * Sends an email with default test counts and duration. This method is provided for backward compatibility.
      */
     public static void sendEmail() {
         sendEmail(0, 0, 0, "00:00:00");
     }
 
     /**
-     * Backward compatibility method - calls the main sendEmail method with default duration
+     * Sends an email with the given test counts and a default duration. This method is provided for backward compatibility.
+     *
+     * @param passedCount The number of passed tests.
+     * @param failedCount The number of failed tests.
+     * @param skippedCount The number of skipped tests.
      */
     public static void sendEmail(int passedCount, int failedCount, int skippedCount) {
         sendEmail(passedCount, failedCount, skippedCount, "00:00:00");
     }
-
-
 }

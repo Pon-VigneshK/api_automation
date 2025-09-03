@@ -16,18 +16,42 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ThreadLocalRandom;
 
+/**
+ * {@code JsonUtils} is a final class that provides utility methods for working with JSON data.
+ * This class includes methods for reading test data from JSON files, generating JSON data from
+ * a database, and updating JSON payloads.
+ *
+ * <p>This class is designed to be used statically and should not be instantiated.</p>
+ *
+ * <p><b>Usage:</b></p>
+ * <p>The methods in this class can be called to perform various JSON operations.</p>
+ *
+ * <pre>{@code
+ * // Getting test details from a JSON file
+ * List<Map<String, Object>> testDetails = JsonUtils.getTestDetails("runmanager", "testcaselist");
+ *
+ * // Generating test data from a database
+ * JsonUtils.generateTestDataJson();
+ * }</pre>
+ *
+ * @version 1.0
+ * @since 2023-10-27
+ */
 @SuppressWarnings({"unchecked", "rawtypes"})
 public final class JsonUtils {
     private static final LinkedHashMap<String, LinkedHashMap<String, ArrayList<HashMap<String, Object>>>> testDataHashMap = new LinkedHashMap();
     private static final List<Map<String, Object>> finalDatalist = new ArrayList<>();
     private static final LinkedHashMap<String, ArrayList<HashMap<String, Object>>> finalMap = new LinkedHashMap();
-    //test case runner list map
     private static final LinkedHashMap<String, ArrayList<HashMap<String, Object>>> finalTestList = new LinkedHashMap();
     private static final LinkedHashMap<String, LinkedHashMap<String, ArrayList<HashMap<String, Object>>>> testRunnerHashMap = new LinkedHashMap();
-    // HashMap to store test runner data.
     private static HashMap<String, Object> queriesList = new HashMap();
     private static FileInputStream fileInputStream;
     private static String envName;
@@ -35,13 +59,12 @@ public final class JsonUtils {
     private JsonUtils() {
     }
 
-
     /**
-     * Get test details from the JSON file based on high-level and nested key names.
+     * Gets test details from a JSON file based on high-level and nested key names.
      *
      * @param highLevelKeyName The high-level key name in the JSON structure.
      * @param nestedKeyName    The nested key name in the JSON structure.
-     * @return List of test details as maps.
+     * @return A list of maps, where each map represents a set of test details.
      */
     public static List<Map<String, Object>> getTestDetails(String highLevelKeyName, String nestedKeyName) {
         List<Map<String, Object>> testDetailsList = new ArrayList<>();
@@ -75,6 +98,11 @@ public final class JsonUtils {
         return testDetailsList;
     }
 
+    /**
+     * Gets test data details from the test data JSON file.
+     *
+     * @return A list of maps, where each map represents a set of test data.
+     */
     public static List<Map<String, Object>> getTestDataDetails() {
         try {
             ObjectMapper objectMapper = new ObjectMapper();
@@ -108,6 +136,12 @@ public final class JsonUtils {
         return finalDatalist;
     }
 
+    /**
+     * Gets query details from the SQL queries JSON file.
+     *
+     * @param queryType The type of query to retrieve (e.g., "select", "runnerlist").
+     * @return A map of query details.
+     */
     public static HashMap<String, Object> getQueryDetails(String queryType) {
 
         try {
@@ -135,12 +169,14 @@ public final class JsonUtils {
         return queriesList;
     }
 
+    /**
+     * Generates a JSON file with test data from a database.
+     */
     public static void generateTestDataJson() {
         try {
 
             Statement st = DataBaseConnectionUtils.getMyConn().createStatement();
             HashMap<String, Object> queryDetails = getQueryDetails("select");
-
 
             for (Map.Entry<String, Object> mapdata : queryDetails.entrySet()) {
 
@@ -189,6 +225,9 @@ public final class JsonUtils {
         }
     }
 
+    /**
+     * Generates a JSON file with the test runner list from a database.
+     */
     public static void generateRunnerListJsonData() {
         try {
             Statement st = DataBaseConnectionUtils.getMyConn().createStatement();
@@ -227,6 +266,12 @@ public final class JsonUtils {
         }
     }
 
+    /**
+     * Updates a JSON payload with a random local ID and writes it to an output file.
+     *
+     * @param input The path to the input JSON file.
+     * @param output The path to the output JSON file.
+     */
     public static void updateLocationPayload(String input, String output) {
         File inputFile = new File(input);
         File outputFile = new File(output);
@@ -234,23 +279,18 @@ public final class JsonUtils {
         ObjectNode root;
 
         try {
-            // Read JSON into ObjectNode
             root = (ObjectNode) objectMapper.readTree(inputFile);
         } catch (IOException e) {
             throw new RuntimeException("Failed to read input JSON file", e);
         }
 
-        // Set a random localId > 200
-        int localId = ThreadLocalRandom.current().nextInt(200, 2000); // Random between 201–9999
+        int localId = ThreadLocalRandom.current().nextInt(200, 2000);
         root.put("localId", String.valueOf(localId));
 
         try {
-            // Write the updated JSON to output file
             objectMapper.writerWithDefaultPrettyPrinter().writeValue(outputFile, root);
         } catch (IOException e) {
             throw new RuntimeException("Failed to write output JSON file", e);
         }
     }
-
 }
-

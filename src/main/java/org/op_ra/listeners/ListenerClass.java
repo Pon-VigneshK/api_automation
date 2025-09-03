@@ -4,7 +4,11 @@ import org.op_ra.annotations.FrameworkAnnotation;
 import org.op_ra.constants.FrameworkConstants;
 import org.op_ra.reports.ExtentLogger;
 import org.op_ra.reports.ExtentReport;
-import org.op_ra.utils.*;
+import org.op_ra.utils.CurrentTestTracker;
+import org.op_ra.utils.ExecutionContext;
+import org.op_ra.utils.SendEmailWithResults;
+import org.op_ra.utils.TestMetrics;
+import org.op_ra.utils.TestRunContext;
 import org.testng.ISuite;
 import org.testng.ISuiteListener;
 import org.testng.ITestListener;
@@ -13,14 +17,39 @@ import org.testng.ITestResult;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 
-import static org.op_ra.enums.LogType.*;
+import static org.op_ra.enums.LogType.DEBUG;
+import static org.op_ra.enums.LogType.ERROR;
+import static org.op_ra.enums.LogType.INFO;
 import static org.op_ra.reports.FrameworkLogger.log;
 import static org.op_ra.utils.ReportDatabaseController.logResult;
 
 /**
- * Implements {@link org.testng.ITestListener} and {@link org.testng.ISuiteListener} to leverage the abstract methods.
- * Mostly used to assist in extent report generation.
- * <pre>Please make sure to add the listener details in the testng.xml file.</pre>
+ * {@code ListenerClass} is a TestNG listener that implements {@link ITestListener} and {@link ISuiteListener}.
+ * This class is responsible for handling events during the test execution lifecycle, such as the start and
+ * finish of a suite and the start, success, failure, and skipping of a test.
+ *
+ * <p>This listener plays a crucial role in generating Extent Reports, logging test results to a database,
+ * and sending email notifications with the test summary.</p>
+ *
+ * <p><b>Usage:</b></p>
+ * <p>To use this listener, it must be specified in the TestNG suite XML file.</p>
+ *
+ * <pre>{@code
+ * <suite name="MyTestSuite">
+ *     <listeners>
+ *         <listener class-name="org.op_ra.listeners.ListenerClass"/>
+ *     </listeners>
+ *     <test name="MyTest">
+ *         ...
+ *     </test>
+ * </suite>
+ * }</pre>
+ *
+ * @see ITestListener
+ * @see ISuiteListener
+ * @see ExtentReport
+ * @version 1.0
+ * @since 2023-10-27
  */
 public class ListenerClass implements ITestListener, ISuiteListener {
 
@@ -30,9 +59,10 @@ public class ListenerClass implements ITestListener, ISuiteListener {
     private static int skippedCount = 0;
 
     /**
-     * Initializes the reports with the specified file name.
+     * This method is invoked before the TestNG suite starts. It initializes the Extent Report,
+     * sets up the execution context with a unique run ID, and resets the test counters.
      *
-     * @see ExtentReport
+     * @param suite The suite that is about to be run.
      */
     @Override
     public void onStart(ISuite suite) {
@@ -40,30 +70,27 @@ public class ListenerClass implements ITestListener, ISuiteListener {
         passedCount = 0;
         failedCount = 0;
         skippedCount = 0;
-        // Initialize Extent and generate a unique runId for this suite
         ExtentReport.initReports(suite.getXmlSuite().getName());
         ExecutionContext.initRunIdIfAbsent();
-        // Optional: pick buildVersion/triggeredBy from system properties if provided
         ExecutionContext.setBuildVersion(System.getProperty("buildVersion", ExecutionContext.getBuildVersion()));
         ExecutionContext.setTriggeredBy(System.getProperty("triggeredBy", ExecutionContext.getTriggeredBy()));
     }
 
     /**
-     * Terminates the reports.
+     * This method is invoked after the TestNG suite has run. It flushes the Extent Report,
+     * calculates the total execution time, and sends an email with the test results summary.
      *
-     * @see ExtentReport
+     * @param suite The suite that has just been run.
      */
     @Override
     public void onFinish(ISuite suite) {
         try {
             ExtentReport.flushReports();
 
-            // Calculate execution duration
             long suiteEndTime = System.currentTimeMillis();
             long durationMillis = suiteEndTime - suiteStartTime;
             String executionDuration = formatDuration(durationMillis);
 
-            // Send email with actual test counts and duration
             SendEmailWithResults.sendEmail(passedCount, failedCount, skippedCount, executionDuration);
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -71,10 +98,11 @@ public class ListenerClass implements ITestListener, ISuiteListener {
     }
 
     /**
-     * Starts a test node for each TestNG test.
+     * This method is invoked before each test method starts. It creates a new test in the Extent Report,
+     * adds the author and category information from the {@link FrameworkAnnotation}, and resets the
+     * test run context if the test method is different from the previous one.
      *
-     * @see ExtentReport
-     * @see FrameworkAnnotation
+     * @param result The result of the test method that is about to be run.
      */
     @Override
     public void onTestStart(ITestResult result) {
@@ -84,20 +112,19 @@ public class ListenerClass implements ITestListener, ISuiteListener {
                 + result.getMethod().getMethodName());
         ExtentReport.addAuthors(annotation.author());
         ExtentReport.addCategories(annotation.category());
-        // Reset iteration when test method changes; otherwise keep for retries
         String methodName = result.getMethod().getMethodName();
         if (!methodName.equals(CurrentTestTracker.get())) {
             TestRunContext.reset();
             CurrentTestTracker.set(methodName);
         }
-        // Clear per-test metrics at start
         TestMetrics.clear();
     }
 
     /**
-     * Marks the test as pass and logs it in the report.
+     * This method is invoked when a test method passes. It logs the test result to the database,
+     * marks the test as "pass" in the Extent Report, and clears the test context.
      *
-     * @see ExtentLogger
+     * @param result The result of the successful test method.
      */
     @Override
     public void onTestSuccess(ITestResult result) {
@@ -124,9 +151,10 @@ public class ListenerClass implements ITestListener, ISuiteListener {
     }
 
     /**
-     * Marks the test as fail and logs it in the report.
+     * This method is invoked when a test method fails. It logs the test result to the database,
+     * marks the test as "fail" in the Extent Report, logs the exception, and clears the test metrics.
      *
-     * @see org.op_ra.reports.ExtentLogger
+     * @param result The result of the failed test method.
      */
     @Override
     public void onTestFailure(ITestResult result) {
@@ -153,16 +181,15 @@ public class ListenerClass implements ITestListener, ISuiteListener {
         log(DEBUG, Arrays.toString(result.getThrowable() != null ? result.getThrowable().getStackTrace() : new StackTraceElement[]{}));
         log(ERROR, result.getMethod().getMethodName() + " is failed !!");
         log(INFO, "------------------------------------------------------------");
-        // Do not clear TestRunContext here; a retry may follow and needs the iterationId preserved
         TestMetrics.clear();
     }
 
     /**
-     * Marks the test as skip and logs it in the report.
+     * This method is invoked when a test method is skipped. It logs the test result to the database,
+     * marks the test as "skip" in the Extent Report, and clears the test context.
      *
-     * @see org.op_ra.reports.ExtentLogger
+     * @param result The result of the skipped test method.
      */
-
     @Override
     public void onTestSkipped(ITestResult result) {
         skippedCount++;
@@ -188,7 +215,10 @@ public class ListenerClass implements ITestListener, ISuiteListener {
     }
 
     /**
-     * Format duration from milliseconds to HH:MM:SS format
+     * Formats a duration in milliseconds to a string in HH:MM:SS format.
+     *
+     * @param durationMillis The duration in milliseconds.
+     * @return A string representing the duration in HH:MM:SS format.
      */
     private String formatDuration(long durationMillis) {
         long seconds = durationMillis / 1000;

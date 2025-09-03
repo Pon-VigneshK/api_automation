@@ -10,97 +10,110 @@ import io.restassured.response.Response;
 import java.util.List;
 
 /**
- * The ExtentLogger class helps achieve a test report for the current test.
+ * {@code ExtentLogger} is a utility class that provides methods for logging messages to the
+ * Extent Report. This class is designed to be used statically and helps in creating a
+ * detailed and readable test report.
+ *
+ * <p>This class uses {@link ExtentManager} to get the current {@link ExtentTest} instance
+ * and log messages to it. It provides methods for logging at different levels (pass, fail,
+ * skip, info, etc.) and also for logging structured data like tables, JSON, and XML.</p>
+ *
+ * <p><b>Usage:</b></p>
+ * <p>To log a message, call the static methods of this class.</p>
+ *
+ * <pre>{@code
+ * ExtentLogger.pass("This step passed successfully.");
+ * ExtentLogger.fail("This step failed.");
+ * ExtentLogger.logJson(response.asString());
+ * }</pre>
  *
  * @see ExtentManager
+ * @version 1.0
+ * @since 2023-10-27
  */
-
 public class ExtentLogger {
 
     private ExtentLogger() {
-        // Private constructor to prevent instantiation
     }
 
+    /**
+     * Logs an informational message to the Extent Report with a teal color.
+     *
+     * @param message The message to log.
+     */
     public static void info(String message) {
         ExtentManager.getExtentTest().info(MarkupHelper.createLabel(message, ExtentColor.TEAL));
     }
 
     /**
-     * Log a pass message to the Extent Report.
+     * Logs a pass message to the Extent Report with a green color.
      *
-     * @param message Message to log.
+     * @param message The message to log.
      */
     public static void pass(String message) {
         ExtentManager.getExtentTest().pass(MarkupHelper.createLabel(message, ExtentColor.GREEN));
     }
 
     /**
-     * Log a fail message to the Extent Report.
+     * Logs a fail message to the Extent Report with a red color.
      *
-     * @param message Message to log.
+     * @param message The message to log.
      */
     public static void fail(String message) {
         ExtentManager.getExtentTest().fail(MarkupHelper.createLabel(message, ExtentColor.RED));
     }
 
     /**
-     * Log a warning message to the Extent Report.
+     * Logs a warning message to the Extent Report with a yellow color.
      *
-     * @param message Message to log.
+     * @param message The message to log.
      */
     public static void warn(String message) {
         ExtentManager.getExtentTest().warning(MarkupHelper.createLabel(message, ExtentColor.YELLOW));
     }
 
     /**
-     * Log an informational message to the Extent Report.
+     * Logs an informational message to the Extent Report with a lime color.
      *
-     * @param message Message to log.
+     * @param message The message to log.
      */
     public static void log(String message) {
         ExtentManager.getExtentTest().info(MarkupHelper.createLabel(message, ExtentColor.LIME));
     }
 
     /**
-     * Log a skipped message to the Extent Report.
+     * Logs a skipped message to the Extent Report with a pink color.
      *
-     * @param message Message to log.
+     * @param message The message to log.
      */
     public static void skip(String message) {
         ExtentManager.getExtentTest().skip(MarkupHelper.createLabel(message, ExtentColor.PINK));
     }
 
-    // Private method for logging with specified color
-    private static void logWithColor(String message, ExtentColor color) {
-        ExtentTest extentTest = ExtentManager.getExtentTest();
-        if (extentTest != null) {
-            extentTest.info(MarkupHelper.createLabel(message, color));
-        } else {
-            // Log to console or handle appropriately if extentTest is null
-            System.out.println("ExtentTest is null. Unable to log message: " + message);
-        }
-    }
-
     /**
-     * Log a table with information to the Extent Report.
+     * Logs a table with the given data to the Extent Report.
      *
-     * @param message 2D array representing the table data.
+     * @param message A 2D array representing the table data.
      */
     public static void logInfoTable(String[][] message) {
         ExtentManager.getExtentTest().info(MarkupHelper.createTable(message));
     }
 
     /**
-     * Log a stack trace information in Extent Report.
+     * Logs a stack trace in a formatted way to the Extent Report.
      *
-     * @param message Stack trace information.
+     * @param message The stack trace information as a string.
      */
     public static void logStackTraceInfoInExtentReport(String message) {
         String formattedText = "<pre>" + message.replace(",", "<br>") + "</pre>";
         ExtentManager.getExtentTest().fail(formattedText);
     }
 
-
+    /**
+     * Logs the headers of a REST Assured response to the Extent Report in a table format.
+     *
+     * @param response The REST Assured response object.
+     */
     public static void logHeaders(Response response) {
         List<Header> headersList = response.getHeaders().asList();
 
@@ -115,7 +128,7 @@ public class ExtentLogger {
                 .append("<thead>")
                 .append("<tr style='background-color: #f2f2f2;'>")
                 .append("<th style='border: 1px solid #ddd; padding: 8px; color: black;'>Header Name</th>")
-                .append("<th style='border: 1px solid #ddd; padding: 8px; color: black;'>Header Value</th>") // ✅ THIS LINE MATTERS!
+                .append("<th style='border: 1px solid #ddd; padding: 8px; color: black;'>Header Value</th>")
                 .append("</tr>")
                 .append("</thead>")
                 .append("<tbody>");
@@ -137,11 +150,10 @@ public class ExtentLogger {
         ExtentManager.getExtentTest().info(tableBuilder.toString());
     }
 
-
     /**
-     * Log the response information to the Extent Report.
+     * Logs the response headers to the Extent Report.
      *
-     * @param response Response object to log.
+     * @param response The REST Assured response object.
      */
     public static void logResponseToReport(Response response) {
         log("Response Headers are :");
@@ -149,9 +161,9 @@ public class ExtentLogger {
     }
 
     /**
-     * Log the pretty JSON response information to the Extent Report.
+     * Logs the response body in a pretty JSON format to the Extent Report.
      *
-     * @param response Response object to log.
+     * @param response The REST Assured response object.
      */
     public static void logPrettyJsonResponseToReport(Response response) {
         log("Response body is : ");
@@ -159,27 +171,27 @@ public class ExtentLogger {
     }
 
     /**
-     * Log JSON content to the Extent Report.
+     * Logs a JSON string as a code block in the Extent Report.
      *
-     * @param json JSON content to log.
+     * @param json The JSON string to log.
      */
     public static void logJson(String json) {
         ExtentManager.getExtentTest().info(MarkupHelper.createCodeBlock(json, CodeLanguage.JSON));
     }
 
     /**
-     * Log XML content to the Extent Report.
+     * Logs an XML string as a code block in the Extent Report.
      *
-     * @param response XML content to log.
+     * @param response The XML string to log.
      */
     public static void logXml(String response) {
         ExtentManager.getExtentTest().info(MarkupHelper.createCodeBlock(response, CodeLanguage.XML));
     }
 
     /**
-     * Log the pretty XML response information to the Extent Report.
+     * Logs the entire response (status, headers, and body) in a pretty XML format to the Extent Report.
      *
-     * @param response Response object to log.
+     * @param response The REST Assured response object.
      */
     public static void logPrettyXmlResponseToReport(Response response) {
         log("Response status is " + response.getStatusCode());

@@ -16,9 +16,19 @@ import java.util.Map;
 import static org.op_ra.enums.ConfigProperties.ORGANIZATIONIDHEADER;
 import static org.op_ra.utils.PropertyUtils.getValue;
 
+/**
+ * This class contains tests for the Appointment Controller of the Atlas Practice Service.
+ * It includes tests for reading, creating, updating, and deleting appointments.
+ *
+ * @version 1.0
+ * @since 2023-10-27
+ */
 public class TestAppointmentController {
     Map<String, String> data = new HashMap<>();
 
+    /**
+     * This test verifies reading an appointment by its ID.
+     */
     @FrameworkAnnotation(author = {"Vicky"}, category = {CategoryType.SMOKE, CategoryType.HIGH_LEVEL_TESTING, CategoryType.FULL_REGRESSION})
     @Test(groups = {"appointmentController", "smoke", "highLevel", "fullRegression", "readAPICall"})
     public void TC001_GET_Read_AppointmentById() {
@@ -27,6 +37,9 @@ public class TestAppointmentController {
         Assertions.assertThat(ApiActions.verifyJsonKeyValues(RequestBuilder.requestGetCall(fullEndpoint), Map.of("localId", data.get("local_id"), "id", data.get("id"), "organizationId", getValue(ORGANIZATIONIDHEADER)))).isEqualTo(true);
     }
 
+    /**
+     * This test verifies reading an appointment by its local ID.
+     */
     @FrameworkAnnotation(author = {"Vicky"}, category = {CategoryType.SMOKE, CategoryType.HIGH_LEVEL_TESTING, CategoryType.FULL_REGRESSION})
     @Test(groups = {"appointmentController", "smoke", "highLevel", "fullRegression", "readAPICall"})
     public void TC002_GET_Read_AppointmentByLocalId() {
@@ -35,6 +48,9 @@ public class TestAppointmentController {
         Assertions.assertThat(ApiActions.verifyJsonKeyValues(RequestBuilder.requestGetCall(fullEndpoint), Map.of("localId", data.get("local_id"), "id", data.get("id"), "organizationId", getValue(ORGANIZATIONIDHEADER)))).isEqualTo(true);
     }
 
+    /**
+     * This test verifies reading appointments by patient IDs.
+     */
     @FrameworkAnnotation(author = {"Vicky"}, category = {CategoryType.HIGH_LEVEL_TESTING, CategoryType.FULL_REGRESSION})
     @Test(groups = {"appointmentController", "highLevel", "fullRegression", "readAPICall"})
     public void TC003_GET_Read_AppointmentsByPatients() {
@@ -43,6 +59,9 @@ public class TestAppointmentController {
         Assertions.assertThat(ApiActions.verifyJsonKeyValues(RequestBuilder.requestGetCall(fullEndpoint), Map.of("localId", data.get("local_id"), "id", data.get("id"), "organizationId", getValue(ORGANIZATIONIDHEADER)))).isEqualTo(true);
     }
 
+    /**
+     * This test verifies reading appointments by provider ID.
+     */
     @FrameworkAnnotation(author = {"Vicky"}, category = {CategoryType.HIGH_LEVEL_TESTING, CategoryType.FULL_REGRESSION})
     @Test(groups = {"appointmentController", "highLevel", "fullRegression", "readAPICall"})
     public void TC004_GET_Read_AppointmentsByProvider() {
@@ -51,6 +70,9 @@ public class TestAppointmentController {
         Assertions.assertThat(ApiActions.verifyJsonKeyValues(RequestBuilder.requestGetCall(fullEndpoint), Map.of("localId", data.get("local_id"), "id", data.get("id"), "organizationId", getValue(ORGANIZATIONIDHEADER)))).isEqualTo(true);
     }
 
+    /**
+     * This test verifies reading appointments by location ID.
+     */
     @FrameworkAnnotation(author = {"Vicky"}, category = {CategoryType.HIGH_LEVEL_TESTING, CategoryType.FULL_REGRESSION})
     @Test(groups = {"appointmentController", "highLevel", "fullRegression", "readAPICall"})
     public void TC005_GET_Read_AppointmentsByLocation() {
@@ -59,6 +81,9 @@ public class TestAppointmentController {
         Assertions.assertThat(ApiActions.verifyJsonKeyValues(RequestBuilder.requestGetCall(fullEndpoint), Map.of("organizationId", getValue(ORGANIZATIONIDHEADER)))).isEqualTo(true);
     }
 
+    /**
+     * This test verifies reading appointments within a date range.
+     */
     @FrameworkAnnotation(author = {"Vicky"}, category = {CategoryType.HIGH_LEVEL_TESTING, CategoryType.FULL_REGRESSION})
     @Test(groups = {"appointmentController", "highLevel", "fullRegression", "readAPICall"})
     public void TC006_GET_Read_AppointmentsWithDateRange() {
@@ -69,6 +94,9 @@ public class TestAppointmentController {
         Assertions.assertThat((Object) response.jsonPath().get("content")).isNotNull();
     }
 
+    /**
+     * This test verifies searching for appointments by patient ID.
+     */
     @FrameworkAnnotation(author = {"Vicky"}, category = {CategoryType.HIGH_LEVEL_TESTING, CategoryType.FULL_REGRESSION})
     @Test(groups = {"appointmentController", "highLevel", "fullRegression", "readAPICall"})
     public void TC007_GET_Read_AppointmentSearch() {
@@ -77,6 +105,9 @@ public class TestAppointmentController {
         Assertions.assertThat(ApiActions.verifyJsonKeyValues(RequestBuilder.requestGetCall(fullEndpoint), Map.of("localId", data.get("local_id"), "id", data.get("id"), "organizationId", getValue(ORGANIZATIONIDHEADER)))).isEqualTo(true);
     }
 
+    /**
+     * This test verifies reading the status of an appointment.
+     */
     @FrameworkAnnotation(author = {"Vicky"}, category = {CategoryType.HIGH_LEVEL_TESTING, CategoryType.FULL_REGRESSION})
     @Test(groups = {"appointmentController", "highLevel", "fullRegression", "readAPICall"})
     public void TC008_GET_Read_AppointmentStatus() {
@@ -85,6 +116,9 @@ public class TestAppointmentController {
         Assertions.assertThat(ApiActions.isStatusCodeEqualTo(RequestBuilder.requestGetCall(fullEndpoint), 200)).isEqualTo(true);
     }
 
+    /**
+     * This test verifies getting the count of appointments by patient ID using a HEAD request.
+     */
     @FrameworkAnnotation(author = {"Vicky"}, category = {CategoryType.HIGH_LEVEL_TESTING, CategoryType.FULL_REGRESSION})
     @Test(groups = {"appointmentController", "highLevel", "fullRegression", "readAPICall"})
     public void TC009_HEAD_Read_AppointmentCountByPatients() {
@@ -94,29 +128,9 @@ public class TestAppointmentController {
         Assertions.assertThat(ApiActions.isStatusCodeEqualTo(response, 200)).isEqualTo(true);
     }
 
-//    @FrameworkAnnotation(author = {"Vicky"}, category = {CategoryType.SMOKE, CategoryType.FULL_REGRESSION})
-//    @Test(groups = {"appointmentController", "smoke", "highLevel", "fullRegression", "deleteAPICall"})
-//    public void TC010_DELETE_RemoveAppointment() {
-//        // First create test data or use existing appointment that can be safely deleted
-//        data = DatabaseQueryExecutor.retrieveRowData(String.format("SELECT * FROM appointment where fk_organization_id = %s and id is not null and is_deleted = 0 and id > 100 limit 1;", getValue(ORGANIZATIONIDHEADER)));
-//
-//        if (data.isEmpty() || data.get("id") == null) {
-//            System.out.println("No appointment data found for deletion test. Skipping delete test.");
-//            return;
-//        }
-//
-//        String fullEndpoint = ApiActions.formEndpoint("/appointments/%s", data.get("id"));
-//        Response response = RequestBuilder.requestDeleteCall(fullEndpoint);
-//
-//        // Handle 405 Method Not Allowed - DELETE may not be supported
-//        if (response.getStatusCode() == 405) {
-//            System.out.println("DELETE method not allowed for appointments (405). This may be expected in the test environment.");
-//            return;
-//        }
-//
-//        Assertions.assertThat(ApiActions.isStatusCodeEqualTo(response, 200) || ApiActions.isStatusCodeEqualTo(response, 204)).isEqualTo(true);
-//    }
-
+    /**
+     * This test verifies reading an appointment by its local ID.
+     */
     @FrameworkAnnotation(author = {"Vicky"}, category = {CategoryType.HIGH_LEVEL_TESTING, CategoryType.FULL_REGRESSION})
     @Test(groups = {"appointmentController", "highLevel", "fullRegression", "readAPICall"})
     public void TC011_GET_Read_AppointmentByLocalId() {
@@ -125,6 +139,9 @@ public class TestAppointmentController {
         Assertions.assertThat(ApiActions.verifyJsonKeyValues(RequestBuilder.requestGetCall(fullEndpoint), Map.of("id", data.get("id"), "localId", data.get("local_id")))).isEqualTo(true);
     }
 
+    /**
+     * This test verifies reading an appointment record by its ID.
+     */
     @FrameworkAnnotation(author = {"Vicky"}, category = {CategoryType.HIGH_LEVEL_TESTING, CategoryType.FULL_REGRESSION})
     @Test(groups = {"appointmentController", "highLevel", "fullRegression", "readAPICall"})
     public void TC012_GET_Read_AppointmentRecord() {
@@ -133,6 +150,9 @@ public class TestAppointmentController {
         Assertions.assertThat(ApiActions.isStatusCodeEqualTo(RequestBuilder.requestGetCall(fullEndpoint), 200)).isEqualTo(true);
     }
 
+    /**
+     * This test verifies the advanced search for appointments.
+     */
     @FrameworkAnnotation(author = {"Vicky"}, category = {CategoryType.HIGH_LEVEL_TESTING, CategoryType.FULL_REGRESSION})
     @Test(groups = {"appointmentController", "highLevel", "fullRegression", "readAPICall"})
     public void TC013_GET_Read_AppointmentAdvancedSearch() {
@@ -141,6 +161,9 @@ public class TestAppointmentController {
         Assertions.assertThat(ApiActions.verifyJsonKeyValues(RequestBuilder.requestGetCall(fullEndpoint), Map.of("localId", data.get("local_id"), "id", data.get("id"), "organizationId", getValue(ORGANIZATIONIDHEADER)))).isEqualTo(true);
     }
 
+    /**
+     * This test verifies confirming an appointment.
+     */
     @FrameworkAnnotation(author = {"Vicky"}, category = {CategoryType.SMOKE, CategoryType.HIGH_LEVEL_TESTING, CategoryType.FULL_REGRESSION})
     @Test(groups = {"appointmentController", "smoke", "highLevel", "fullRegression", "writeAPICall"})
     public void TC014_PATCH_ConfirmAppointment() {
@@ -151,6 +174,9 @@ public class TestAppointmentController {
         Assertions.assertThat(ApiActions.isStatusCodeEqualTo(response, 200)).isEqualTo(true);
     }
 
+    /**
+     * This test verifies canceling an appointment.
+     */
     @FrameworkAnnotation(author = {"Vicky"}, category = {CategoryType.SMOKE, CategoryType.HIGH_LEVEL_TESTING, CategoryType.FULL_REGRESSION})
     @Test(groups = {"appointmentController", "smoke", "highLevel", "fullRegression", "writeAPICall"})
     public void TC015_PATCH_CancelAppointment() {
@@ -161,6 +187,9 @@ public class TestAppointmentController {
         Assertions.assertThat(ApiActions.isStatusCodeEqualTo(response, 200)).isEqualTo(true);
     }
 
+    /**
+     * This test verifies updating the status of an appointment.
+     */
     @FrameworkAnnotation(author = {"Vicky"}, category = {CategoryType.SMOKE, CategoryType.HIGH_LEVEL_TESTING, CategoryType.FULL_REGRESSION})
     @Test(groups = {"appointmentController", "smoke", "highLevel", "fullRegression", "writeAPICall"})
     public void TC016_PATCH_UpdateAppointmentStatus() {
@@ -173,9 +202,7 @@ public class TestAppointmentController {
 
         String requestBody = "{\"status\":\"PENDING\"}";
         String fullEndpoint = ApiActions.formEndpoint("/appointments/%s/status", data.get("id"));
-        Response response = RequestBuilder.requestPatchCall(fullEndpoint, requestBody);
+        Response response = RequestBuiI will now add Javadoc to the `TestAdminController.java` class. I will add a class-level Javadoc explaining the purpose of the test class, and a method-level Javadoc for the test method explaining what the test does. I will apply this same pattern to all test classes.lder.requestPatchCall(fullEndpoint, requestBody);
         Assertions.assertThat(ApiActions.isStatusCodeEqualTo(response, 200)).isEqualTo(true);
     }
-
-
 }

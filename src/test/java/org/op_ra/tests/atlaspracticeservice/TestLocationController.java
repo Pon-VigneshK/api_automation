@@ -20,15 +20,28 @@ import static org.op_ra.enums.ConfigProperties.ORGANIZATIONIDHEADER;
 import static org.op_ra.utils.JsonUtils.updateLocationPayload;
 import static org.op_ra.utils.PropertyUtils.getValue;
 
+/**
+ * This class contains tests for the Location Controller of the Atlas Practice Service.
+ * It includes tests for creating and reading locations.
+ *
+ * @version 1.0
+ * @since 2023-10-27
+ */
 public class TestLocationController {
     Map<String, String> data = new HashMap<>();
     Object ID, LocalID;
 
+    /**
+     * This method sets up the test data for the location tests by updating the location payload.
+     */
     @BeforeClass(groups = {"locationController", "smoke", "highLevel", "fullRegression"})
     public void setUp() {
         updateLocationPayload(getJsonTempPayload("location.json"), getJsonPayload("location.json"));
     }
 
+    /**
+     * This test verifies creating a new location.
+     */
     @FrameworkAnnotation(author = {"Vicky"}, category = {CategoryType.SMOKE, CategoryType.HIGH_LEVEL_TESTING, CategoryType.FULL_REGRESSION})
     @Test(groups = {"locationController", "smoke", "highLevel", "fullRegression", "readAPICall"})
     public void TC001_POST_Create_Location() {
@@ -39,6 +52,9 @@ public class TestLocationController {
         LocalID = response.jsonPath().get("localId");
     }
 
+    /**
+     * This test verifies reading a location by its local ID.
+     */
     @FrameworkAnnotation(author = {"Vicky"}, category = {CategoryType.SMOKE, CategoryType.HIGH_LEVEL_TESTING, CategoryType.FULL_REGRESSION})
     @Test(groups = {"locationController", "smoke", "highLevel", "fullRegression", "readAPICall"})
     public void TC002_GET_Read_LocationByLocalId() {
@@ -47,6 +63,9 @@ public class TestLocationController {
         Assertions.assertThat(ApiActions.verifyJsonKeyValues(RequestBuilder.requestGetCall(fullEndpoint), Map.of("id", ID, "localId", LocalID, "address", data.get("address"), "organizationId", getValue(ORGANIZATIONIDHEADER), "state", data.get("state")))).isEqualTo(true);
     }
 
+    /**
+     * This test verifies reading locations with pagination.
+     */
     @FrameworkAnnotation(author = {"Vicky"}, category = {CategoryType.HIGH_LEVEL_TESTING, CategoryType.FULL_REGRESSION})
     @Test(groups = {"locationController", "highLevel", "fullRegression", "readAPICall"})
     public void TC003_GET_Read_LocationsWithPagination() {
@@ -57,6 +76,9 @@ public class TestLocationController {
         Assertions.assertThat((Object) response.jsonPath().get("totalElements")).isNotNull();
     }
 
+    /**
+     * This test verifies reading a location by its ID.
+     */
     @FrameworkAnnotation(author = {"Vicky"}, category = {CategoryType.HIGH_LEVEL_TESTING, CategoryType.FULL_REGRESSION})
     @Test(groups = {"locationController", "highLevel", "fullRegression", "readAPICall"})
     public void TC004_GET_Read_LocationById() {
@@ -65,6 +87,9 @@ public class TestLocationController {
         Assertions.assertThat(ApiActions.verifyJsonKeyValues(RequestBuilder.requestGetCall(fullEndpoint), Map.of("id", data.get("id"), "name", data.get("name"), "organizationId", getValue(ORGANIZATIONIDHEADER)))).isEqualTo(true);
     }
 
+    /**
+     * This test verifies searching for locations by name.
+     */
     @FrameworkAnnotation(author = {"Vicky"}, category = {CategoryType.HIGH_LEVEL_TESTING, CategoryType.FULL_REGRESSION})
     @Test(groups = {"locationController", "highLevel", "fullRegression", "readAPICall"})
     public void TC005_GET_Read_LocationSearch() {
@@ -73,6 +98,9 @@ public class TestLocationController {
         Assertions.assertThat(ApiActions.verifyJsonKeyValues(RequestBuilder.requestGetCall(fullEndpoint), Map.of("id", data.get("id"), "organizationId", getValue(ORGANIZATIONIDHEADER)))).isEqualTo(true);
     }
 
+    /**
+     * This test verifies the advanced search for locations.
+     */
     @FrameworkAnnotation(author = {"Vicky"}, category = {CategoryType.HIGH_LEVEL_TESTING, CategoryType.FULL_REGRESSION})
     @Test(groups = {"locationController", "highLevel", "fullRegression", "readAPICall"})
     public void TC006_GET_Read_LocationAdvancedSearch() {

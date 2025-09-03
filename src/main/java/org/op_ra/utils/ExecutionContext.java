@@ -4,6 +4,30 @@ import org.op_ra.constants.FrameworkConstants;
 
 import java.util.UUID;
 
+/**
+ * {@code ExecutionContext} is a final class that holds information about the current test execution context.
+ * This class provides a centralized place to store and access details such as the run ID, service name,
+ * build version, and who triggered the execution.
+ *
+ * <p>This class is designed to be used statically and should not be instantiated.</p>
+ *
+ * <p><b>Usage:</b></p>
+ * <p>The methods in this class can be called to get and set the execution context details.</p>
+ *
+ * <pre>{@code
+ * // Initializing the run ID
+ * ExecutionContext.initRunIdIfAbsent();
+ *
+ * // Getting the run ID
+ * String runId = ExecutionContext.getRunId();
+ *
+ * // Setting the build version
+ * ExecutionContext.setBuildVersion("1.2.3");
+ * }</pre>
+ *
+ * @version 1.0
+ * @since 2023-10-27
+ */
 public final class ExecutionContext {
 
     private static final String pipelineId = System.getenv("CI_PIPELINE_ID");
@@ -16,22 +40,85 @@ public final class ExecutionContext {
     private ExecutionContext() {
     }
 
-    /** Generate a unique runId once per suite. Safe to call multiple times; first wins. */
+    /**
+     * Initializes the run ID with a unique UUID if it has not already been initialized.
+     * This method is thread-safe.
+     */
     public static synchronized void initRunIdIfAbsent() {
         if (runId == null || runId.isEmpty()) {
             runId = UUID.randomUUID().toString();
         }
     }
 
-    public static String getRunId() { return runId; }
-    public static void setRunId(String value) { runId = value; }
+    /**
+     * Returns the current run ID.
+     *
+     * @return The current run ID.
+     */
+    public static String getRunId() {
+        return runId;
+    }
 
-    public static String getServiceName() { return serviceName; }
-    public static void setServiceName(String value) { serviceName = value; }
+    /**
+     * Sets the run ID.
+     *
+     * @param value The run ID to set.
+     */
+    public static void setRunId(String value) {
+        runId = value;
+    }
 
-    public static String getBuildVersion() { return buildVersion; }
-    public static void setBuildVersion(String value) { buildVersion = value; }
+    /**
+     * Returns the name of the service under test.
+     *
+     * @return The service name.
+     */
+    public static String getServiceName() {
+        return serviceName;
+    }
 
-    public static String getTriggeredBy() { return triggeredBy; }
-    public static void setTriggeredBy(String value) { triggeredBy = value; }
+    /**
+     * Sets the name of the service under test.
+     *
+     * @param value The service name to set.
+     */
+    public static void setServiceName(String value) {
+        serviceName = value;
+    }
+
+    /**
+     * Returns the current build version.
+     *
+     * @return The current build version.
+     */
+    public static String getBuildVersion() {
+        return buildVersion;
+    }
+
+    /**
+     * Sets the build version.
+     *
+     * @param value The build version to set.
+     */
+    public static void setBuildVersion(String value) {
+        buildVersion = value;
+    }
+
+    /**
+     * Returns who triggered the current execution.
+     *
+     * @return Who triggered the execution.
+     */
+    public static String getTriggeredBy() {
+        return triggeredBy;
+    }
+
+    /**
+     * Sets who triggered the execution.
+     *
+     * @param value Who triggered the execution.
+     */
+    public static void setTriggeredBy(String value) {
+        triggeredBy = value;
+    }
 }

@@ -15,9 +15,19 @@ import java.util.Map;
 import static org.op_ra.enums.ConfigProperties.ORGANIZATIONIDHEADER;
 import static org.op_ra.utils.PropertyUtils.getValue;
 
+/**
+ * This class contains tests for the Insurance Policy Controller of the Atlas Practice Service.
+ * It includes tests for reading insurance policies.
+ *
+ * @version 1.0
+ * @since 2023-10-27
+ */
 public class TestInsurancePolicyController {
     Map<String, String> data = new HashMap<>();
 
+    /**
+     * This test verifies reading an insurance policy by its ID.
+     */
     @FrameworkAnnotation(author = {"Vicky"}, category = {CategoryType.SMOKE, CategoryType.HIGH_LEVEL_TESTING, CategoryType.FULL_REGRESSION})
     @Test(groups = {"insurancePolicyController", "smoke", "highLevel", "fullRegression", "readAPICall"})
     public void TC001_GET_Read_InsurancePolicyById() {
@@ -26,6 +36,9 @@ public class TestInsurancePolicyController {
         Assertions.assertThat(ApiActions.verifyJsonKeyValues(RequestBuilder.requestGetCall(fullEndpoint), Map.of("id", data.get("id"), "organizationId", getValue(ORGANIZATIONIDHEADER), "payerId", data.get("fk_payer_id"), "policyNumber", data.get("policy_number")))).isEqualTo(true);
     }
 
+    /**
+     * This test verifies reading insurance policies with pagination.
+     */
     @FrameworkAnnotation(author = {"Vicky"}, category = {CategoryType.HIGH_LEVEL_TESTING, CategoryType.FULL_REGRESSION})
     @Test(groups = {"insurancePolicyController", "highLevel", "fullRegression", "readAPICall"})
     public void TC002_GET_Read_InsurancePoliciesWithPagination() {
@@ -36,6 +49,9 @@ public class TestInsurancePolicyController {
         Assertions.assertThat((Object) response.jsonPath().get("totalElements")).isNotNull();
     }
 
+    /**
+     * This test verifies reading insurance policies by patient ID.
+     */
     @FrameworkAnnotation(author = {"Vicky"}, category = {CategoryType.HIGH_LEVEL_TESTING, CategoryType.FULL_REGRESSION})
     @Test(groups = {"insurancePolicyController", "highLevel", "fullRegression", "readAPICall"})
     public void TC003_GET_Read_InsurancePoliciesByPatient() {
@@ -44,6 +60,9 @@ public class TestInsurancePolicyController {
         Assertions.assertThat(ApiActions.isStatusCodeEqualTo(RequestBuilder.requestGetCall(fullEndpoint), 200)).isEqualTo(true);
     }
 
+    /**
+     * This test verifies reading an insurance policy by its local ID.
+     */
     @FrameworkAnnotation(author = {"Vicky"}, category = {CategoryType.SMOKE, CategoryType.HIGH_LEVEL_TESTING, CategoryType.FULL_REGRESSION})
     @Test(groups = {"insurancePolicyController", "smoke", "highLevel", "fullRegression", "readAPICall"})
     public void TC004_GET_Read_InsurancePolicyByLocalId() {
@@ -52,6 +71,9 @@ public class TestInsurancePolicyController {
         Assertions.assertThat(ApiActions.verifyJsonKeyValues(RequestBuilder.requestGetCall(fullEndpoint), Map.of("id", data.get("id"), "organizationId", getValue(ORGANIZATIONIDHEADER), "payerId", data.get("fk_payer_id"), "policyNumber", data.get("policy_number")))).isEqualTo(true);
     }
 
+    /**
+     * This test verifies the advanced search for insurance policies.
+     */
     @FrameworkAnnotation(author = {"Vicky"}, category = {CategoryType.HIGH_LEVEL_TESTING, CategoryType.FULL_REGRESSION})
     @Test(groups = {"insurancePolicyController", "highLevel", "fullRegression", "readAPICall"})
     public void TC005_GET_Read_InsurancePolicyAdvancedSearch() {

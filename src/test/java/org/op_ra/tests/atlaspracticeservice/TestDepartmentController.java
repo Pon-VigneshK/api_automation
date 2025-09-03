@@ -17,9 +17,19 @@ import java.util.Map;
 import static org.op_ra.enums.ConfigProperties.ORGANIZATIONIDHEADER;
 import static org.op_ra.utils.PropertyUtils.getValue;
 
+/**
+ * This class contains tests for the Department Controller of the Atlas Practice Service.
+ * It includes tests for reading and creating departments.
+ *
+ * @version 1.0
+ * @since 2023-10-27
+ */
 public class TestDepartmentController {
     Map<String, String> data = new HashMap<>();
 
+    /**
+     * This test verifies reading a department by its ID.
+     */
     @FrameworkAnnotation(author = {"Vicky"}, category = {CategoryType.SMOKE, CategoryType.FULL_REGRESSION})
     @Test(groups = {"departmentController", "smoke", "highLevel", "fullRegression", "readAPICall"})
     public void TC001_GET_Read_DepartmentById() {
@@ -28,6 +38,9 @@ public class TestDepartmentController {
         Assertions.assertThat(ApiActions.verifyJsonKeyValues(RequestBuilder.requestGetCall(fullEndpoint), Map.of("id", data.get("id"), "name", data.get("name"), "organizationId", getValue(ORGANIZATIONIDHEADER)))).isEqualTo(true);
     }
 
+    /**
+     * This test verifies reading a department by its local ID.
+     */
     @FrameworkAnnotation(author = {"Vicky"}, category = {CategoryType.SMOKE, CategoryType.FULL_REGRESSION})
     @Test(groups = {"departmentController", "smoke", "highLevel", "fullRegression", "readAPICall"})
     public void TC002_GET_Read_DepartmentByLocalId() {
@@ -36,6 +49,9 @@ public class TestDepartmentController {
         Assertions.assertThat(ApiActions.verifyJsonKeyValues(RequestBuilder.requestGetCall(fullEndpoint), Map.of("id", data.get("id"), "name", data.get("name"), "organizationId", getValue(ORGANIZATIONIDHEADER)))).isEqualTo(true);
     }
 
+    /**
+     * This test verifies reading departments with pagination.
+     */
     @FrameworkAnnotation(author = {"Vicky"}, category = {CategoryType.SMOKE, CategoryType.FULL_REGRESSION})
     @Test(groups = {"departmentController", "smoke", "highLevel", "fullRegression", "readAPICall"})
     public void TC003_GET_Read_DepartmentsWithPagination() {
@@ -46,6 +62,9 @@ public class TestDepartmentController {
         Assertions.assertThat((Object) response.jsonPath().get("totalElements")).isNotNull();
     }
 
+    /**
+     * This test verifies searching for departments by name.
+     */
     @FrameworkAnnotation(author = {"Vicky"}, category = {CategoryType.SMOKE, CategoryType.FULL_REGRESSION})
     @Test(groups = {"departmentController", "smoke", "highLevel", "fullRegression", "readAPICall"})
     public void TC004_GET_Read_DepartmentSearch() {
@@ -54,6 +73,9 @@ public class TestDepartmentController {
         Assertions.assertThat(ApiActions.verifyJsonKeyValues(RequestBuilder.requestGetCall(fullEndpoint), Map.of("id", data.get("id"), "name", data.get("name"), "organizationId", getValue(ORGANIZATIONIDHEADER)))).isEqualTo(true);
     }
 
+    /**
+     * This test verifies the advanced search for departments.
+     */
     @FrameworkAnnotation(author = {"Vicky"}, category = {CategoryType.SMOKE, CategoryType.FULL_REGRESSION})
     @Test(groups = {"departmentController", "smoke", "highLevel", "fullRegression", "readAPICall"})
     public void TC005_GET_Read_DepartmentAdvancedSearch() {
@@ -62,23 +84,22 @@ public class TestDepartmentController {
         Assertions.assertThat(ApiActions.verifyJsonKeyValues(RequestBuilder.requestGetCall(fullEndpoint), Map.of("id", data.get("id"), "name", data.get("name"), "organizationId", getValue(ORGANIZATIONIDHEADER)))).isEqualTo(true);
     }
 
+    /**
+     * This test verifies creating a new department.
+     */
     @FrameworkAnnotation(author = {"Vicky"}, category = {CategoryType.SMOKE, CategoryType.FULL_REGRESSION})
     @Test(groups = {"departmentController", "smoke", "highLevel", "fullRegression", "writeAPICall"})
     public void TC006_POST_Create_Department() {
-        // Enhanced payload with required organizationId field and proper structure
         String requestBody = String.format("{\"name\":\"Test Department %d\",\"description\":\"Test department for automation\",\"isActive\":true,\"organizationId\":%s}",
                 System.currentTimeMillis(), PropertyUtils.getValue(ConfigProperties.ORGANIZATIONIDHEADER));
 
         String fullEndpoint = ApiActions.formEndpoint("/departments");
 
-        // Use enhanced POST method with x-practiceid header (required by Department endpoint)
         Response response = RequestBuilder.requestPostCallWithPracticeId(fullEndpoint, requestBody, PropertyUtils.getValue(ConfigProperties.PRACTICEIDHEADER));
         Assertions.assertThat(ApiActions.isStatusCodeEqualTo(response, 200)).isEqualTo(true);
 
-        // Extract response data only if successful
         Object departmentId = response.jsonPath().get("id");
         Object departmentName = response.jsonPath().get("name");
         System.out.println("Created Department - ID: " + departmentId + ", Name: " + departmentName + ", Status: " + response.getStatusCode());
     }
-
 }

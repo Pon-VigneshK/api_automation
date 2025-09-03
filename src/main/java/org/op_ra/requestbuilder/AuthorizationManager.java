@@ -15,23 +15,42 @@ import static org.op_ra.reports.FrameworkLogger.log;
 import static org.op_ra.utils.PropertyUtils.getValue;
 
 /**
- * This class manages authorization for the application using various authentication methods.
- * It provides methods to retrieve authentication-related properties and obtain access tokens.
+ * {@code AuthorizationManager} is a final class that manages authorization for the application
+ * using various authentication methods. It provides methods to retrieve an access token for
+ * OAuth2 authentication.
+ *
+ * <p>This class is designed to be used statically and should not be instantiated.</p>
+ *
+ * <p><b>Usage:</b></p>
+ * <p>The {@code getCurrentSessionToken} method can be called to obtain an OAuth2 access token.</p>
+ *
+ * <pre>{@code
+ * String accessToken = AuthorizationManager.getCurrentSessionToken();
+ * }</pre>
+ *
+ * @version 1.0
+ * @since 2023-10-27
  */
 public final class AuthorizationManager {
 
     private AuthorizationManager() {
     }
 
-
+    /**
+     * Obtains an OAuth2 access token using the client credentials grant type. It sends a POST
+     * request to the access token URL with the client ID and client secret.
+     *
+     * <p>This method uses relaxed HTTPS validation, so it should be used with caution in a
+     * production environment.</p>
+     *
+     * @return The access token as a string, or {@code null} if authentication fails.
+     */
     public static String getCurrentSessionToken() {
         try {
-            // Disable SSL verification (use it cautiously)
             RestAssured.useRelaxedHTTPSValidation();
             Map<String, String> body = new HashMap<>();
             body.put("grant_type", "client_credentials");
             body.put("audience", getValue(AUDIENCE));
-            // Make a POST request to obtain the access token
             String accessToken = RestAssured.given()
                     .auth().preemptive().basic(StringDecoder.decodeBase64UTF8(getValue(CLIENTID)), StringDecoder.decodeBase64UTF8(getValue(CLIENTSECRET)))
                     .contentType(ContentType.JSON)
@@ -50,10 +69,4 @@ public final class AuthorizationManager {
             return null;
         }
     }
-
-
 }
-
-
-
-
